@@ -25,7 +25,7 @@ Alternatively, if you use PlatformIO from within an IDE like Visual Studio Code,
 $ sudo apt-get install cmake libglfw3-dev libglew-dev libglm-dev libasound2-dev
 ~~~
 
-or on Mac ([homewbrew](https://brew.sh) required)
+or on Mac ([homebrew](https://brew.sh) required)
 
 ~~~
 $ brew install cmake glfw glm
