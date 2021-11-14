@@ -2,6 +2,7 @@
 #define ImGui_h
 
 #include "imgui/imgui.h"
+#include <stdint.h>
 
 
 namespace ImGui {
