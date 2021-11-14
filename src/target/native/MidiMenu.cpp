@@ -45,14 +45,13 @@ void MidiMenu::drawMenu()
                                     "to the output port. When you resume, a snapshot of the current program number "
                                     "and controller values is sent immediately");
 
-      if (sender.enabled())
+      ImGui::BeginDisabled(not sender.enabled());
+      if (ImGui::Button("Send Snapshot"))
       {
-         if (ImGui::Button("Send Snapshot"))
-         {
-            m_factory.program().sendSnapshot(m_midi_source.getSender());
-         }
-         ImGui::SameLine(); HelpMarker("Send the current program number and all controller values");
+         m_factory.program().sendSnapshot(m_midi_source.getSender());
       }
+      ImGui::EndDisabled();
+      ImGui::SameLine(); HelpMarker("Send the current program number and all controller values");
    }
 }
 
