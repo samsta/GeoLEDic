@@ -77,6 +77,7 @@ void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
         }
         ImGui::EndCombo();
     }
+    ImGui::Separator();
     
     program().drawMenu(sender, piano);
 }

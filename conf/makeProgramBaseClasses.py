@@ -77,7 +77,9 @@ IMGUI_SLIDER_TEMPLATE = '''
     {
         const uint8_t cmin = $min;
         const uint8_t cmax = $max;
-        if (ImGui::SliderScalar("$name", ImGuiDataType_U8, &m_control_values[$cc_num], &cmin, &cmax))
+        if (++ix % 8 != 0) ImGui::SameLine();
+        if (ImGui::VSliderU8WithText("$name", "$description",
+                                     ImVec2(20, 200), &m_control_values[$cc_num], cmin, cmax, ix * HUE_STEP_PER_SLIDER))
         {
             if (sender) sender->sendControlChange($cc_num, m_control_values[$cc_num]);
         }
@@ -156,6 +158,9 @@ def getMenu(program):
             menu = menu + Template(IMGUI_TOGGLE_TEMPLATE).substitute(
                name=name,
                cc_num=cc['number'])
+            if 'description' in cc:
+                menu = menu + '    ImGui::SameLine(); HelpMarker("%s");\n' % cc['description']
+
         elif cc['type'] == 'enum':
             enum_strings = []
             for k in range(0, len(cc['enums'])):
@@ -165,15 +170,17 @@ def getMenu(program):
                cc_num=cc['number'],
                enums='"' + '",\n            "'.join(enum_strings) + '"',
                values=', '.join(str(x) for x in cc['values']))
+            if 'description' in cc:
+                menu = menu + '    ImGui::SameLine(); HelpMarker("%s");\n' % cc['description']
+
         else:
             menu = menu + Template(IMGUI_SLIDER_TEMPLATE).substitute(
                name=name,
+               description=cc['description'] if 'description' in cc else '',
                cc_num=cc['number'],
                min=cc['min'],
                max=cc['max'])
         
-        if 'description' in cc:
-            menu = menu + '    ImGui::SameLine(); HelpMarker("%s");\n' % cc['description']
     return menu
 
 command = sys.argv[2] if len(sys.argv) > 2 else ''
@@ -202,6 +209,8 @@ namespace {
 std::vector<std::vector<KeyZone> > key_zones = {
 $keyzones
 };
+
+const uint8_t HUE_STEP_PER_SLIDER = 24;
 }
 
 #endif
@@ -220,14 +229,15 @@ void ${classname}::run()
 #ifdef WITH_GFX
 void ${classname}::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
 {
+    uint8_t ix = 0;
     {
         const uint8_t cmin = 0;
         const uint8_t cmax = 127;
-        if (ImGui::SliderScalar("CC7: Brightness", ImGuiDataType_U8, &m_brightness_raw, &cmin, &cmax))
+        if (ImGui::VSliderU8WithText("CC7: Brightness", "The brightness is preserved on program change, unlike the other controllers",
+                                     ImVec2(20, 200), &m_brightness_raw, cmin, cmax, ix * HUE_STEP_PER_SLIDER))
         {
             if (sender) sender->sendControlChange(7, m_brightness_raw);
         }
-        ImGui::SameLine(); HelpMarker("The brightness is preserved on program change, unlike the other controllers");
     }
 $menu
     if (piano)

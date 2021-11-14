@@ -61,7 +61,6 @@ void Menu::draw()
    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
    ImGui::End();
       
-   //ImGui::ShowDemoWindow();
    ImGui::Render();
    int display_w, display_h;
    glfwGetFramebufferSize(m_window, &display_w, &display_h);
