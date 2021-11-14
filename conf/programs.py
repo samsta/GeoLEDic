@@ -585,8 +585,8 @@ programs = [
           },
           {
              'name': 'Hue',
-             'number': 25,
-             'default': fader_cc(3),
+             'number': fader_cc(3),
+             'default': 64,
              'description': 'Center hue value used for the randomised colors'
           },
           {
