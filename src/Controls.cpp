@@ -5,7 +5,7 @@ namespace {
    const uint8_t BRIGHTNESS_CC = 7;
 }
 
-uint8_t Controls::m_brightness_raw = 75;
+uint8_t Controls::m_brightness_raw = 50;
 
 Controls::Controls()
 {

@@ -106,7 +106,7 @@ programs = [
             {
                 'name': 'Sparkle Probability',
                 'number': fader_cc(2),
-                'default': 50
+                'default': 0
             },
             {
                 'name': 'Keys Only',
