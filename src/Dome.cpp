@@ -6,7 +6,7 @@ namespace {
 CRGB* strip(int ix){ return &leds[ix*LEDS_PER_STRIP]; }
 }
 
-#define SAMS_LEDS
+//#define SAMS_LEDS
 
 Triangle dome[DOME_NUM_TRIANGLES] = {
 // row 0
