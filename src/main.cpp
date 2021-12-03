@@ -31,19 +31,19 @@ static const uint8_t pinlist[NUM_STRIPS] = {
 /* S16 */ 17, 
 /* S17 */ 18, 
 /* S18 */ 19, 
-/* S19 */ 32, 
+/* S19 */ 30,
 /* S20 */ 16, 
-/* S21 */ 29, 
+/* S21 */ 31,
 /* S22 */ 28,
 /* S23 */ 22, 
 /* S24 */ 20, 
-/* S25 */ 30, 
+/* S25 */ 29,
 /* S26 */ 25,
 /* S27 */ 26,
 /* S28 */ 27,
 /* S29 */ 23, 
 /* S30 */ 24, 
-/* S31 */ 31
+/* S31 */ 32
 };
 
 OctoWS2811 octo_ws(LEDS_PER_STRIP, dma_mem, leds, WS2811_GRB | WS2813_800kHz, NUM_STRIPS, pinlist);
