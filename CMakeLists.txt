@@ -23,7 +23,7 @@ include_directories(.
                     ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(SYSTEM "${FASTLED_DIR}/src")
 
-add_subdirectory(src/target/native)
+include(src/target/native/sources.cmake)
 add_subdirectory(src/programs)
 
 # The core sources are the ones built for unit tests as well

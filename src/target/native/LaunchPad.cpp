@@ -1,4 +1,5 @@
 #include "LaunchPad.hpp"
+#include "ControllerInfo.hpp"
 #include <algorithm>
 #include <iostream>
 
@@ -17,6 +18,91 @@ enum SysexCommand
 
 }
 
+class Fader
+{
+public:
+    Fader(uint8_t cc_num,
+          uint8_t min,
+          uint8_t max,
+          unsigned color_index,
+          PadColor* pads,
+          MidiMessageSink& to_geoledic):
+        m_cc_num(cc_num),
+        //m_min(min),
+        //m_max(max),
+        m_color_index(color_index),
+        m_pads(pads),
+        m_to_geoledic(to_geoledic),
+        m_value(0)
+    {
+        (void)min;
+        (void)max;
+    }
+
+    ~Fader()
+    {
+        for (unsigned k = 0; k < 8; k++)
+        {
+            m_pads[k] = CRGB::Black;
+        }
+    }
+
+    void update(uint8_t value)
+    {
+        for (unsigned k = 0; k < 8; k++)
+        {
+            if (value/18 > k)
+            {
+                m_pads[k] = ColorFromPalette(RainbowColors_p, m_color_index*24, 255);
+            }
+            else if (value/18 == k)
+            {
+                m_pads[k] = ColorFromPalette(RainbowColors_p, m_color_index*24, (value % 18)*14 + 17);
+            }
+            else
+            {
+                m_pads[k] = CRGB::Black;
+            }
+        }
+        m_value = value;
+    }
+
+    void pushPad(uint8_t row, bool fine_resolution)
+    {
+        uint8_t val =       row == 7 ? 127 : row * 18;
+        uint8_t upper_val = row >= 6 ? 127 : (row+1) * 18;
+        if (m_value >= val && m_value < upper_val)
+        {
+            m_value += (fine_resolution ? 1 : 6);
+            if (m_value >= upper_val)
+            {
+                m_value = val;
+            }
+        }
+        else
+        {
+            m_value = val;
+        }
+
+        MidiMessage msg;
+        msg.data[0] = MidiMessage::CONTROL_CHANGE << 4;
+        msg.data[1] = m_cc_num;
+        msg.data[2] = m_value;
+        msg.length = 3;
+        m_to_geoledic.sink(msg);
+    }
+
+private:
+    unsigned m_cc_num;
+    //unsigned m_min;
+    //unsigned m_max;
+    unsigned m_color_index;
+    PadColor* m_pads;
+    MidiMessageSink& m_to_geoledic;
+    uint8_t m_value;
+};
+
+
 union LaunchPad::SysexMsg
 {
     SysexMsg()
@@ -33,13 +119,13 @@ union LaunchPad::SysexMsg
     } raw;
 }  __attribute__((packed));
 
-LaunchPad::PadColor::PadColor():
+PadColor::PadColor():
     m_dirty(true),
     m_color(CRGB::Black)
 {
 }
 
-void LaunchPad::PadColor::operator=(const CRGB& color)
+void PadColor::operator=(const CRGB& color)
 {
     if (m_color != color)
     {
@@ -53,7 +139,6 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_to_geoledic(to_geoledic),
     m_sysex_message(*new SysexMsg()),
     m_pad_colors(),
-    m_last_col_val(),
     m_fine_fader_resolution(false)
 {
     enterMode(PROGRAMMER);
@@ -128,34 +213,27 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
     if (msg.type() == MidiMessage::CONTROL_CHANGE)
     {
-        if (msg.data[1] != 7 && (msg.data[1] < 16 || msg.data[1] > 22)) return;
+        if (m_faders_by_cc.count(msg.data[1]) == 0) return;
 
-        uint8_t index = msg.data[1] == 7 ? 0 : msg.data[1] - 15;
-        uint8_t value = msg.data[2];
-
-        m_last_col_val[index] = value;
-
-        for (unsigned k = 0; k < NUM_ROWS-1; k++)
+        m_faders_by_cc[msg.data[1]]->update(msg.data[2]);
+    }
+    else if (msg.type() == MidiMessage::PROGRAM_CHANGE)
+    {
+        uint8_t program_num = msg.data[1];
+        m_faders.clear();
+        m_faders_by_cc.clear();
+        for (const ControlChangeParams& p: getFadersForProgram(program_num))
         {
-            if (value/18 > k)
-            {
-                m_pad_colors[index][k] = ColorFromPalette(RainbowColors_p, index*24, 255);
-            }
-            else if (value/18 == k)
-            {
-                m_pad_colors[index][k] = ColorFromPalette(RainbowColors_p, index*24, (value % 18)*14 + 17);
-            }
-            else
-            {
-                m_pad_colors[index][k] = CRGB::Black;
-            }
+            if (m_faders.size() >= 8) break;
+            unsigned index = m_faders.size();
+            m_faders_by_cc[p.cc_num] = std::make_shared<Fader>(p.cc_num, p.min, p.max, index, m_pad_colors[index], m_to_geoledic);
+            m_faders.push_back(m_faders_by_cc[p.cc_num]);
         }
     }
 }
 
 void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 {
-    const uint8_t col_to_ctrl[8] = {7, 16, 17, 18, 19, 20, 21, 22};
     if (msg.type() == MidiMessage::NOTE_ON || msg.type() == MidiMessage::CONTROL_CHANGE)
     {
         if (msg.data[1] == 29)
@@ -168,29 +246,9 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 
         uint8_t row = (msg.data[1] / 10) - 1;
         uint8_t col = (msg.data[1] % 10) - 1;
-        if (col >= 8) return;
+        if (col >= m_faders.size()) return;
 
-        uint8_t val =       row == 7 ? 127 : row * 18;
-        uint8_t upper_val = row >= 6 ? 127 : (row+1) * 18;
-        if (m_last_col_val[col] >= val && m_last_col_val[col] < upper_val)
-        {
-            m_last_col_val[col] += (m_fine_fader_resolution ? 1 : 6);
-            if (m_last_col_val[col] >= upper_val)
-            {
-                m_last_col_val[col] = val;
-            }
-        }
-        else
-        {
-            m_last_col_val[col] = val;
-        }
-
-        MidiMessage msg;
-        msg.data[0] = MidiMessage::CONTROL_CHANGE << 4;
-        msg.data[1] = col_to_ctrl[col];
-        msg.data[2] = m_last_col_val[col];
-        msg.length = 3;
-        m_to_geoledic.sink(msg);
+        m_faders[col]->pushPad(row, m_fine_fader_resolution);
     }
 }
 

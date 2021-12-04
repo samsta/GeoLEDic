@@ -5,6 +5,20 @@
 #define FASTLED_INTERNAL // get rid of annoying version pragma
 #include "platform.h"
 #include "FastLED.h"
+#include <memory>
+#include <map>
+#include <vector>
+
+class Fader;
+
+struct PadColor
+{
+public:
+    PadColor();
+    void operator=(const CRGB& color);
+    bool m_dirty;
+    CRGB m_color;    
+};
 
 class LaunchPad
 {
@@ -34,18 +48,13 @@ private:
         NUM_ROWS = 9,
         NUM_COLS = 9
     };
-    struct PadColor
-    {
-    public:
-        PadColor();
-        void operator=(const CRGB& color);
-        bool m_dirty;
-        CRGB m_color;    
-    };
+
     PadColor m_pad_colors[NUM_COLS][NUM_ROWS];
 
-    uint8_t m_last_col_val[NUM_COLS];
     bool m_fine_fader_resolution;
+
+    std::vector<std::shared_ptr<Fader> > m_faders;
+    std::map<uint8_t, std::shared_ptr<Fader> > m_faders_by_cc;
 };
 
 #endif // LAUNCHPAD_HPP
