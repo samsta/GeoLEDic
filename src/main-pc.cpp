@@ -3,6 +3,7 @@
 #include <vector>
 #include "Serial.hpp"
 #include "MidiMenu.hpp"
+#include "Controls.hpp"
 #include <iostream>
 
 
@@ -42,7 +43,9 @@ int main()
                   .attenuationSquare(900.0)
                   .keyboardHandler(&Serial)
                   .menu(&midi_menu));
-            
+      
+      gfx.registerForceBlank(Controls::getForceBlank());
+
       do {
          loopGeoLEDic();
       } while(gfx.draw());

@@ -70,6 +70,8 @@ private:
     bool m_up_pushed;
     bool m_down_pushed;
 
+    bool m_force_blank;
+
     std::vector<std::shared_ptr<Fader> > m_faders;
     std::map<uint8_t, std::shared_ptr<Fader> > m_faders_by_cc;
 };

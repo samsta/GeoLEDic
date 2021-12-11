@@ -1,11 +1,8 @@
 #include "Controls.hpp"
 #include <algorithm>
 
-namespace {
-   const uint8_t BRIGHTNESS_CC = 7;
-}
-
 uint8_t Controls::m_brightness_raw = 50;
+bool Controls::m_force_blank = false;
 
 Controls::Controls()
 {
@@ -33,10 +30,17 @@ uint8_t Controls::getBrightness() const
    return m_brightness_raw * 2; // brightness is 0..255 (well, 254, realistically)
 }
 
+bool& Controls::getForceBlank()
+{
+   return m_force_blank;
+}
+
+
 uint8_t Controls::getControlValue(uint8_t cc_num) const
 {
    if (cc_num >= sizeof(m_control_values)) return 0;
    if (cc_num == BRIGHTNESS_CC) return m_brightness_raw;
+   if (cc_num == FORCE_BLANK_CC) return m_force_blank ? 127: 0;
    return m_control_values[cc_num];
 }
 
@@ -46,6 +50,11 @@ void Controls::setControlValue(uint8_t cc_num, uint8_t value)
    if (cc_num == BRIGHTNESS_CC)
    {
       m_brightness_raw = value;
+      return;
+   }
+   if (cc_num == FORCE_BLANK_CC)
+   {
+      m_force_blank = value > 0;
       return;
    }
 

@@ -3,6 +3,7 @@
 #define FASTLED_INTERNAL // get rid of annoying version pragma
 #include "FastLED.h"
 #include "GeoLEDic.hpp"
+#include "Controls.hpp"
 
 #define FRAME_RATE 24
 static const unsigned FRAME_INTERVAL_MS = 1000 / FRAME_RATE;
@@ -56,6 +57,7 @@ void setup() {
     pinMode(LOADMON_PIN, OUTPUT);
 
     octo_ws.begin();
+    octo_ws.registerForceBlank(Controls::getForceBlank());
 }
 
 void loop()

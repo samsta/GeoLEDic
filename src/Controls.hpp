@@ -7,8 +7,15 @@
 class Controls: public Program
 {
 public:
+   enum SpecialControllers {
+      BRIGHTNESS_CC = 7,
+      FORCE_BLANK_CC = 80
+   };
+
    Controls();
    virtual void controlChange(uint8_t cc_num, uint8_t value);
+   
+   static bool& getForceBlank();
 
 protected:
    uint8_t getBrightness() const;
@@ -18,6 +25,7 @@ protected:
 
    uint8_t m_control_values[128];
    static uint8_t m_brightness_raw;
+   static bool m_force_blank;
 };
 
 #endif // GEOLEDIC_PROGRAM_HPP

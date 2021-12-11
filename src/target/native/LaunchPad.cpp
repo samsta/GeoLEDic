@@ -1,5 +1,6 @@
 #include "LaunchPad.hpp"
 #include "ControllerInfo.hpp"
+#include "Controls.hpp"
 #include <algorithm>
 #include <iostream>
 
@@ -24,8 +25,14 @@ enum TopRowFunctions
     NEXT_PAGE = 3
 };
 
+enum SideColumnFunctions
+{
+    FORCE_BLANK = 0
+};
+
 const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
 const CRGB COLOR_FADER_FINE_BTN(CRGB::MidnightBlue);
+const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
 
 const CRGB dim(const CRGB& c, uint8_t brightness = 10)
 {
@@ -202,7 +209,8 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_current_page(),
     m_current_page_ix(),
     m_up_pushed(false),
-    m_down_pushed(false)
+    m_down_pushed(false),
+    m_force_blank(false)
 {
     enterMode(PROGRAMMER);
     sendText("Yeehaw!");
@@ -292,6 +300,14 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
     if (msg.type() == MidiMessage::CONTROL_CHANGE)
     {
+
+        if (msg.data[1] == Controls::FORCE_BLANK_CC)
+        {
+            m_force_blank = msg.data[2] > 0;
+            m_side_col[FORCE_BLANK] = m_force_blank ? COLOR_FORCE_BLANK_BTN : dim(COLOR_FORCE_BLANK_BTN);
+            return;
+        }
+ 
         if (m_faders_by_cc.count(msg.data[1]) == 0) return;
 
         m_faders_by_cc[msg.data[1]]->update(msg.data[2]);
@@ -336,6 +352,7 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         }
         m_top_row[FADER_UP] = COLOR_FADER_FINE_BTN;
         m_top_row[FADER_DOWN] = COLOR_FADER_FINE_BTN;
+        m_side_col[FORCE_BLANK] = m_force_blank ? COLOR_FORCE_BLANK_BTN : dim(COLOR_FORCE_BLANK_BTN);
     }
 }
 
@@ -385,6 +402,21 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
             else if (col == FADER_DOWN)
             {
                 m_down_pushed = msg.data[2] > 0;
+            }
+        }
+        else if (col == NUM_COLS)
+        {
+            if (row == FORCE_BLANK)
+            {
+                // only care about note on
+                if (msg.data[2] == 0) return;
+
+                MidiMessage msg;
+                msg.data[0] = MidiMessage::CONTROL_CHANGE << 4;
+                msg.data[1] = Controls::FORCE_BLANK_CC;
+                msg.data[2] = m_force_blank ? 0 : 127; // toggle, so request opposite of current state!
+                msg.length = 3;
+                m_to_geoledic.sink(msg);
             }
         }
         else if (col < NUM_COLS and 

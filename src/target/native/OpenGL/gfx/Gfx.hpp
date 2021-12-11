@@ -57,7 +57,10 @@ public:
    Gfx(std::vector<LED>& led_coordinates, std::vector<Triangle>& triangles, const Config& config = Config());
 
    bool draw();
-   
+
+   // force blank can be used to force all LEDs to black
+   void registerForceBlank(bool& force_blank);
+
    ~Gfx();
 private:
    class Impl;

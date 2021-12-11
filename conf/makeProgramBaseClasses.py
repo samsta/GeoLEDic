@@ -236,10 +236,23 @@ void ${classname}::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
         if (ImGui::VSliderU8WithText("CC7: Brightness", "The brightness is preserved on program change, unlike the other controllers",
                                      ImVec2(20, 200), &m_brightness_raw, cmin, cmax, ix * HUE_STEP_PER_SLIDER))
         {
-            if (sender) sender->sendControlChange(7, m_brightness_raw);
+            if (sender) sender->sendControlChange(BRIGHTNESS_CC, m_brightness_raw);
         }
     }
 $menu
+    {
+        bool v = getControlValue(FORCE_BLANK_CC) > 0;
+        bool prev = v;
+        ImGui::Checkbox("CC80: Force Blank", &v);
+        if (v != prev)
+        {
+            uint8_t val = v ? 127 : 0;
+            setControlValue(FORCE_BLANK_CC, val);
+            if (sender) sender->sendControlChange(FORCE_BLANK_CC, val);
+        }
+        ImGui::SameLine(); HelpMarker("Force all LEDs to black, resume program when un-forced");
+    }
+
     if (piano)
     {
         piano->draw(this, key_zones, sender);
@@ -250,7 +263,7 @@ void ${classname}::sendSnapshot(MidiSource::MidiSender* sender)
 {
     if (sender == nullptr) return;
     sender->sendProgramChange($program_number);
-    sender->sendControlChange(7, m_brightness_raw);
+    sender->sendControlChange(BRIGHTNESS_CC, m_brightness_raw);
 $control_snapshot
 }
 

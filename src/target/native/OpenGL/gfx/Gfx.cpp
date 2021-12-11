@@ -69,9 +69,9 @@ struct LedColor
    {
       if (l.color != nullptr)
       {
-         r = float(l.color->r)/255;
-         g = float(l.color->g)/255;
-         b = float(l.color->b)/255;
+         r = float(l.color->r)/256;
+         g = float(l.color->g)/256;
+         b = float(l.color->b)/256;
       }
    }
 };
@@ -104,6 +104,7 @@ public:
    void drawLitTriangles();
    void controlFrameRate();
    void extractUniformLocations();
+   void registerForceBlank(bool& force_blank);
    
    std::vector<LED>& m_leds;
    std::vector<Triangle>& m_triangles;
@@ -117,6 +118,7 @@ public:
    GLuint              m_vertex_buffer;
    double              m_last_time;
    const double        m_frame_time;
+   bool*               m_force_blank;
    
    struct {
       GLint projection;
@@ -229,7 +231,15 @@ bool Gfx::Impl::draw()
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    m_window.processInputs();
 
-   copy(m_leds.begin(), m_leds.end(), m_led_color_data.begin());
+   if (m_force_blank != nullptr and *m_force_blank)
+   {
+      LedColor black = {0};
+      fill(m_led_color_data.begin(), m_led_color_data.end(), black);
+   }
+   else
+   {
+      copy(m_leds.begin(), m_leds.end(), m_led_color_data.begin());
+   }
    
    glUseProgram(m_program_id);
 
@@ -268,6 +278,11 @@ bool Gfx::Impl::draw()
    return not m_window.shouldClose();
 }
 
+void Gfx::Impl::registerForceBlank(bool& force_blank)
+{
+   m_force_blank = &force_blank;
+}
+
 Gfx::Impl::~Impl()
 {
    // Cleanup VBO and shader
@@ -280,10 +295,14 @@ Gfx::Gfx(std::vector<LED>& led_coordinates, std::vector<Triangle>& triangles, co
 {
 }
 
-
 bool Gfx::draw()
 {
    return m_i.draw();
+}
+
+void Gfx::registerForceBlank(bool& force_blank)
+{
+   m_i.registerForceBlank(force_blank);
 }
 
 Gfx::~Gfx()
