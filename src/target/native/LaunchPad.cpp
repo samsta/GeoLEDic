@@ -18,11 +18,15 @@ enum SysexCommand
 
 enum TopRowFunctions
 {
+    FADER_UP = 0,
+    FADER_DOWN = 1,
     PREV_PAGE = 2,
     NEXT_PAGE = 3
 };
 
-const CRGB PAGE_ACTIVE(CRGB::Magenta);
+const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
+const CRGB COLOR_FADER_FINE_BTN(CRGB::MidnightBlue);
+
 const CRGB dim(const CRGB& c, uint8_t brightness = 10)
 {
     CRGB out(c);
@@ -43,8 +47,8 @@ public:
           PadColor* pads,
           MidiMessageSink& to_geoledic):
         m_cc_num(cc_num),
-        //m_min(min),
-        //m_max(max),
+        m_min(min),
+        m_max(max),
         m_color(color),
         m_pads(pads),
         m_to_geoledic(to_geoledic),
@@ -82,21 +86,48 @@ public:
         m_value = value;
     }
 
-    void pushPad(uint8_t row, bool fine_resolution)
+    enum FaderMode {
+        NORMAL,
+        FINE_UP,
+        FINE_DOWN
+    };
+
+    void pushPad(uint8_t row, FaderMode mode)
     {
         uint8_t val =       row == 7 ? 127 : row * 18;
         uint8_t upper_val = row >= 6 ? 127 : (row+1) * 18;
-        if (m_value >= val && m_value < upper_val)
+
+        switch (mode)
         {
-            m_value += (fine_resolution ? 1 : 6);
-            if (m_value >= upper_val)
+        default:
+        case NORMAL:
+            if (m_value >= val && m_value < upper_val)
+            {
+                m_value += 6;
+                if (m_value >= upper_val)
+                {
+                    m_value = val;
+                }
+            }
+            else
             {
                 m_value = val;
             }
-        }
-        else
-        {
-            m_value = val;
+            break;
+
+        case FINE_UP:
+            if (m_value < m_max)
+            {
+                m_value++;
+            }
+            break;
+
+        case FINE_DOWN:
+            if (m_value > m_min)
+            {
+                m_value--;
+            }
+            break;
         }
 
         MidiMessage msg;
@@ -109,8 +140,8 @@ public:
 
 private:
     unsigned m_cc_num;
-    //unsigned m_min;
-    //unsigned m_max;
+    unsigned m_min;
+    unsigned m_max;
     CRGB m_color;
     PadColor* m_pads;
     MidiMessageSink& m_to_geoledic;
@@ -170,7 +201,8 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_pages(),
     m_current_page(),
     m_current_page_ix(),
-    m_fine_fader_resolution(false)
+    m_up_pushed(false),
+    m_down_pushed(false)
 {
     enterMode(PROGRAMMER);
     sendText("Yeehaw!");
@@ -294,14 +326,16 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         // if we have more than 1 page, enable paging buttons in top row
         if (m_pages.size() > 1)
         {
-            m_top_row[PREV_PAGE] = dim(PAGE_ACTIVE);
-            m_top_row[NEXT_PAGE] = PAGE_ACTIVE;
+            m_top_row[PREV_PAGE] = dim(COLOR_PAGE_BTN);
+            m_top_row[NEXT_PAGE] = COLOR_PAGE_BTN;
         }
         else
         {
             m_top_row[PREV_PAGE] = CRGB::Black;
             m_top_row[NEXT_PAGE] = CRGB::Black;
         }
+        m_top_row[FADER_UP] = COLOR_FADER_FINE_BTN;
+        m_top_row[FADER_DOWN] = COLOR_FADER_FINE_BTN;
     }
 }
 
@@ -309,13 +343,6 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 {
     if (msg.type() == MidiMessage::NOTE_ON || msg.type() == MidiMessage::CONTROL_CHANGE)
     {
-        if (msg.data[1] == 29)
-        {
-            m_fine_fader_resolution = msg.data[2] > 0;
-            return;
-        }
-
-        if (msg.data[2] == 0) return;
 
         uint8_t row = (msg.data[1] / 10) - 1;
         uint8_t col = (msg.data[1] % 10) - 1;
@@ -323,36 +350,63 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
         if (row == NUM_ROWS)
         {
             // top row
-            if (col == 2 and m_current_page_ix != 0)
+            if (col == PREV_PAGE and m_current_page_ix != 0)
             { 
+                // only care about note on
+                if (msg.data[2] == 0) return;
+        
                 --m_current_page;
                 --m_current_page_ix;
                 m_current_page->setDirty();
-                m_top_row[NEXT_PAGE] = PAGE_ACTIVE;
+                m_top_row[NEXT_PAGE] = COLOR_PAGE_BTN;
                 if (m_current_page_ix == 0)
                 {
-                    m_top_row[PREV_PAGE] = dim(PAGE_ACTIVE);
+                    m_top_row[PREV_PAGE] = dim(COLOR_PAGE_BTN);
                 }
             }
-            else if (col == 3 and m_current_page_ix != m_pages.size() - 1) 
+            else if (col == NEXT_PAGE and m_current_page_ix != m_pages.size() - 1) 
             {
+                // only care about note on
+                if (msg.data[2] == 0) return;
+
                 ++m_current_page;
                 ++m_current_page_ix;
                 m_current_page->setDirty();
-                m_top_row[PREV_PAGE] = PAGE_ACTIVE;
+                m_top_row[PREV_PAGE] = COLOR_PAGE_BTN;
                 if (m_current_page_ix == m_pages.size() - 1)
                 {
-                    m_top_row[NEXT_PAGE] = dim(PAGE_ACTIVE);
+                    m_top_row[NEXT_PAGE] = dim(COLOR_PAGE_BTN);
                 }
+            }
+            else if (col == FADER_UP)
+            {
+                m_up_pushed = msg.data[2] > 0;
+            }
+            else if (col == FADER_DOWN)
+            {
+                m_down_pushed = msg.data[2] > 0;
             }
         }
         else if (col < NUM_COLS and 
                  row < NUM_ROWS)
         {
+            // only care about note on
+            if (msg.data[2] == 0) return;
+
             col += NUM_COLS * m_current_page_ix;
             if (col < m_faders.size())
             {
-                m_faders[col]->pushPad(row, m_fine_fader_resolution);
+                Fader::FaderMode mode = Fader::NORMAL;
+                if (m_up_pushed)
+                {
+                    mode = Fader::FINE_UP;
+                }
+                else if (m_down_pushed)
+                {
+                    mode = Fader::FINE_DOWN;
+                }
+
+                m_faders[col]->pushPad(row, mode);
             }
         }
     }

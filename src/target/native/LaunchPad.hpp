@@ -67,7 +67,8 @@ private:
     std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
     unsigned m_current_page_ix;
 
-    bool m_fine_fader_resolution;
+    bool m_up_pushed;
+    bool m_down_pushed;
 
     std::vector<std::shared_ptr<Fader> > m_faders;
     std::map<uint8_t, std::shared_ptr<Fader> > m_faders_by_cc;
