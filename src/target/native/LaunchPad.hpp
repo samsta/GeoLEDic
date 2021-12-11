@@ -8,6 +8,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <list>
 
 class Fader;
 
@@ -20,6 +21,12 @@ public:
     CRGB m_color;    
 };
 
+template <unsigned cols, unsigned rows>
+struct Page {
+    PadColor m_pads[cols][rows];
+    void setDirty();
+};
+
 class LaunchPad
 {
 public:
@@ -29,6 +36,13 @@ public:
     void updateFromMidi(const MidiMessage& msg);
     void updateFromCtrl(const MidiMessage& msg);
     void refreshUi();
+
+    enum
+    {
+        NUM_ROWS = 8,
+        NUM_COLS = 8
+    };
+
 private:
     enum Mode {
         LIVE,
@@ -37,19 +51,21 @@ private:
     void enterMode(Mode mode);
     void sendText(const char* text, const CRGB& color = CRGB::Red);
     void sendColors();
+    bool addPadColor(uint8_t*& p, PadColor& pad, unsigned col, unsigned row);
 
     MidiMessageSink& m_to_launchpad;
     MidiMessageSink& m_to_geoledic;
     union SysexMsg;
     SysexMsg& m_sysex_message;
 
-    enum
-    {
-        NUM_ROWS = 9,
-        NUM_COLS = 9
-    };
 
-    PadColor m_pad_colors[NUM_COLS][NUM_ROWS];
+
+    PadColor m_top_row[NUM_COLS];
+    PadColor m_side_col[NUM_ROWS];
+
+    std::list<Page<NUM_ROWS, NUM_COLS> > m_pages;
+    std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
+    unsigned m_current_page_ix;
 
     bool m_fine_fader_resolution;
 

@@ -16,6 +16,21 @@ enum SysexCommand
     SET_TEXT = 0x07
 };
 
+enum TopRowFunctions
+{
+    PREV_PAGE = 2,
+    NEXT_PAGE = 3
+};
+
+const CRGB PAGE_ACTIVE(CRGB::Magenta);
+const CRGB dim(const CRGB& c, uint8_t brightness = 10)
+{
+    CRGB out(c);
+    out.nscale8(brightness);
+    return out;
+}
+
+
 }
 
 class Fader
@@ -24,13 +39,13 @@ public:
     Fader(uint8_t cc_num,
           uint8_t min,
           uint8_t max,
-          unsigned color_index,
+          CRGB color,
           PadColor* pads,
           MidiMessageSink& to_geoledic):
         m_cc_num(cc_num),
         //m_min(min),
         //m_max(max),
-        m_color_index(color_index),
+        m_color(color),
         m_pads(pads),
         m_to_geoledic(to_geoledic),
         m_value(0)
@@ -53,11 +68,11 @@ public:
         {
             if (value/18 > k)
             {
-                m_pads[k] = ColorFromPalette(RainbowColors_p, m_color_index*24, 255);
+                m_pads[k] = m_color;
             }
             else if (value/18 == k)
             {
-                m_pads[k] = ColorFromPalette(RainbowColors_p, m_color_index*24, (value % 18)*14 + 17);
+                m_pads[k] = dim(m_color, (value % 18)*14 + 17);
             }
             else
             {
@@ -96,7 +111,7 @@ private:
     unsigned m_cc_num;
     //unsigned m_min;
     //unsigned m_max;
-    unsigned m_color_index;
+    CRGB m_color;
     PadColor* m_pads;
     MidiMessageSink& m_to_geoledic;
     uint8_t m_value;
@@ -133,12 +148,28 @@ void PadColor::operator=(const CRGB& color)
         m_color = color;
     }
 }
+  
+template <>
+void Page<LaunchPad::NUM_COLS, LaunchPad::NUM_ROWS>::setDirty()
+{
+    for (PadColor (&row)[LaunchPad::NUM_COLS]: m_pads)
+    {
+        for (PadColor& pad: row)
+        {
+            pad.m_dirty = true;
+        }
+    }
+}
 
 LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic):
     m_to_launchpad(to_launchpad),
     m_to_geoledic(to_geoledic),
     m_sysex_message(*new SysexMsg()),
-    m_pad_colors(),
+    m_top_row(),
+    m_side_col(),
+    m_pages(),
+    m_current_page(),
+    m_current_page_ix(),
     m_fine_fader_resolution(false)
 {
     enterMode(PROGRAMMER);
@@ -175,31 +206,47 @@ void LaunchPad::sendText(const char* text, const CRGB& color)
     m_to_launchpad.sink(m_sysex_message.msg);
 }
 
+bool LaunchPad::addPadColor(uint8_t*& p, PadColor& pad, unsigned col, unsigned row)
+{
+    if (p - m_sysex_message.raw.data + 6 > MAX_SYSEX_DATA_LENGTH)
+    {
+        // the 5 bytes for the color item plus the end marker won't fit,
+        // send the remainder in the next message
+        return false;
+    }
+
+    if (not pad.m_dirty) return true;
+
+    *p++ = 0x3; // use RGB
+    *p++ = (row + 1) * 10 + col + 1;
+    *p++ = pad.m_color.r/2;
+    *p++ = pad.m_color.g/2;
+    *p++ = pad.m_color.b/2;
+
+    pad.m_dirty = false;
+    return true;
+}
+
 void LaunchPad::sendColors()
 {
     m_sysex_message.raw.command = SET_COLORS;
     uint8_t* p = m_sysex_message.raw.data;
+
+    for (unsigned col = 0; col < NUM_COLS; col++)
+    {
+        if (not addPadColor(p, m_top_row[col], col, NUM_ROWS)) break;
+    }
+
+    for (unsigned row = 0; row < NUM_ROWS; row++)
+    {
+        if (not addPadColor(p, m_side_col[row], NUM_COLS, row)) break;
+    }
+
     for (unsigned row = 0; row < NUM_ROWS; row++)
     {
         for (unsigned col = 0; col < NUM_COLS; col++)
         {
-            if (p - m_sysex_message.raw.data + 6 > MAX_SYSEX_DATA_LENGTH)
-            {
-                // the 5 bytes for the color item plus the end marker won't fit,
-                // send the remainder in the next message
-                break;
-            }
-
-            PadColor& pad(m_pad_colors[col][row]);
-            if (not pad.m_dirty) continue;
-
-            *p++ = 0x3; // use RGB
-            *p++ = (row + 1) * 10 + col + 1;
-            *p++ = pad.m_color.r/2;
-            *p++ = pad.m_color.g/2;
-            *p++ = pad.m_color.b/2;
-
-            pad.m_dirty = false;
+            if (not addPadColor(p, m_current_page->m_pads[col][row], col, row)) break;
         }
     }
     if (p == m_sysex_message.raw.data) return; // no messages added
@@ -222,12 +269,38 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         uint8_t program_num = msg.data[1];
         m_faders.clear();
         m_faders_by_cc.clear();
+        m_pages.clear();
+        auto this_page = &m_pages.back();
         for (const ControlChangeParams& p: getFadersForProgram(program_num))
         {
-            if (m_faders.size() >= 8) break;
             unsigned index = m_faders.size();
-            m_faders_by_cc[p.cc_num] = std::make_shared<Fader>(p.cc_num, p.min, p.max, index, m_pad_colors[index], m_to_geoledic);
+            if (index % NUM_COLS == 0)
+            {
+                m_pages.resize(m_pages.size() + 1);
+                this_page = &m_pages.back();
+            }
+
+            m_faders_by_cc[p.cc_num] = std::make_shared<Fader>(
+                p.cc_num, 
+                p.min, 
+                p.max, 
+                CHSV(index*24, 255, 255), 
+                this_page->m_pads[index % NUM_COLS], 
+                m_to_geoledic);
             m_faders.push_back(m_faders_by_cc[p.cc_num]);
+        }
+        m_current_page = m_pages.begin();
+        m_current_page_ix = 0;
+        // if we have more than 1 page, enable paging buttons in top row
+        if (m_pages.size() > 1)
+        {
+            m_top_row[PREV_PAGE] = dim(PAGE_ACTIVE);
+            m_top_row[NEXT_PAGE] = PAGE_ACTIVE;
+        }
+        else
+        {
+            m_top_row[PREV_PAGE] = CRGB::Black;
+            m_top_row[NEXT_PAGE] = CRGB::Black;
         }
     }
 }
@@ -246,9 +319,42 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 
         uint8_t row = (msg.data[1] / 10) - 1;
         uint8_t col = (msg.data[1] % 10) - 1;
-        if (col >= m_faders.size()) return;
 
-        m_faders[col]->pushPad(row, m_fine_fader_resolution);
+        if (row == NUM_ROWS)
+        {
+            // top row
+            if (col == 2 and m_current_page_ix != 0)
+            { 
+                --m_current_page;
+                --m_current_page_ix;
+                m_current_page->setDirty();
+                m_top_row[NEXT_PAGE] = PAGE_ACTIVE;
+                if (m_current_page_ix == 0)
+                {
+                    m_top_row[PREV_PAGE] = dim(PAGE_ACTIVE);
+                }
+            }
+            else if (col == 3 and m_current_page_ix != m_pages.size() - 1) 
+            {
+                ++m_current_page;
+                ++m_current_page_ix;
+                m_current_page->setDirty();
+                m_top_row[PREV_PAGE] = PAGE_ACTIVE;
+                if (m_current_page_ix == m_pages.size() - 1)
+                {
+                    m_top_row[NEXT_PAGE] = dim(PAGE_ACTIVE);
+                }
+            }
+        }
+        else if (col < NUM_COLS and 
+                 row < NUM_ROWS)
+        {
+            col += NUM_COLS * m_current_page_ix;
+            if (col < m_faders.size())
+            {
+                m_faders[col]->pushPad(row, m_fine_fader_resolution);
+            }
+        }
     }
 }
 
