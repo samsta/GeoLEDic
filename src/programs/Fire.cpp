@@ -18,13 +18,13 @@ const TProgmemRGBPalette16* palette(Fire::Palette palette)
    case Fire::Palette_Cloud:
       return &Clouds_p;
    case Fire::Palette_Forest:
-      return &ForestColors_p;
+      return &BlackToForestColors_p;
    case Fire::Palette_Lava:
       return &LavaColors_p;
    case Fire::Palette_Rainbow:
-      return &RainbowColors_p;
+      return &BlackToRainbowColors_p;
    case Fire::Palette_Party:
-      return &PartyColors_p;
+      return &BlackToPartyColors_p;
    }
 }
 
