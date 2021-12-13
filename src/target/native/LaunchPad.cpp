@@ -37,7 +37,7 @@ const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
 const CRGB dim(const CRGB& c, uint8_t brightness = 10)
 {
     CRGB out(c);
-    out.nscale8(brightness);
+    out.nscale8_video(brightness);
     return out;
 }
 
@@ -67,7 +67,7 @@ public:
 
     ~Fader()
     {
-        for (unsigned k = 0; k < 8; k++)
+        for (unsigned k = 0; k < NUM_PADS; k++)
         {
             m_pads[k] = CRGB::Black;
         }
@@ -75,20 +75,28 @@ public:
 
     void update(uint8_t value)
     {
-        for (unsigned k = 0; k < 8; k++)
+        unsigned span      = m_max - m_min + 1;
+        unsigned curr = m_min;
+        for (unsigned k = 0; k < NUM_PADS; k++)
         {
-            if (value/18 > k)
+            unsigned next = (k+1) * span / NUM_PADS + m_min;
+            if (next <= value)
             {
                 m_pads[k] = m_color;
             }
-            else if (value/18 == k)
-            {
-                m_pads[k] = dim(m_color, (value % 18)*14 + 17);
-            }
-            else
+            else if (curr > value)
             {
                 m_pads[k] = CRGB::Black;
             }
+            else
+            {
+                // the scaler is not what you'd expect because the brightness quickly
+                //  saturates on the pad LEDs
+                unsigned scale = 128 * (value - curr) / (next - curr) + 16;
+                m_pads[k] = dim(m_color, scale);
+            }
+
+            curr = next;
         }
         m_value = value;
     }
@@ -101,26 +109,43 @@ public:
 
     void pushPad(uint8_t row, FaderMode mode)
     {
-        uint8_t val =       row == 7 ? 127 : row * 18;
-        uint8_t upper_val = row >= 6 ? 127 : (row+1) * 18;
-
         switch (mode)
         {
         default:
         case NORMAL:
+        {
+            uint8_t span      = m_max - m_min + 1;
+            uint8_t val       = m_min + (unsigned(row) * span) / NUM_PADS;
+            uint8_t upper_val = m_min + (unsigned(row + 1) * span) / NUM_PADS;
+            const unsigned STEPS_PER_PAD = 3;
+            const unsigned NUM_STEPS = NUM_PADS * STEPS_PER_PAD;
+            uint8_t step      = (span + NUM_STEPS-1) / NUM_STEPS;
+
             if (m_value >= val && m_value < upper_val)
             {
-                m_value += 6;
-                if (m_value >= upper_val)
+                m_value += step;
+                if (row == NUM_PADS-1 and m_value > m_max and m_value < m_max + step)
+                {
+                    m_value = m_max;
+                }
+                else if (m_value >= upper_val)
                 {
                     m_value = val;
                 }
             }
             else
             {
-                m_value = val;
+                if (row == NUM_PADS-1)
+                {
+                    m_value = m_max;
+                }
+                else
+                {
+                    m_value = val;
+                }
             }
             break;
+        }
 
         case FINE_UP:
             if (m_value < m_max)
@@ -149,11 +174,13 @@ private:
     unsigned m_cc_num;
     unsigned m_min;
     unsigned m_max;
+    const unsigned NUM_PADS = 8;
     CRGB m_color;
     PadColor* m_pads;
     MidiMessageSink& m_to_geoledic;
     uint8_t m_value;
 };
+
 
 
 union LaunchPad::SysexMsg
