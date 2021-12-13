@@ -101,6 +101,7 @@ programs = [
                 'name': 'Stride',
                 'number': fader_cc(1),
                 'default': 4,
+                'max': 63,
                 'description': 'Larger stride means faster cycling through the color wheel, i.e. more repetitions of the rainbow'
             },
             {
@@ -173,7 +174,8 @@ programs = [
             {
                'name': 'Rotation Speed',
                'number': fader_cc(2),
-               'description': 'Speed at which the entire program turns'
+               'description': 'Speed at which the entire program turns',
+               'max': 63
             },
             {
                 'name': 'Downwards',
@@ -228,7 +230,8 @@ programs = [
             {
                 'name': 'Stride Horizontal',
                 'number': fader_cc(3),
-                'description': 'Larger stride means faster cycling through the color wheel, i.e. more horizontal repetitions of the rainbow'
+                'description': 'Larger stride means faster cycling through the color wheel, i.e. more horizontal repetitions of the rainbow',
+                'max': 63
             }
         ]
     },
@@ -296,7 +299,8 @@ programs = [
          {
             'name': 'Rotation Speed',
             'number': fader_cc(5),
-            'description': 'Speed at which the entire program rotates'
+            'description': 'Speed at which the entire program rotates',
+            'max': 63
          },
          {
              'name': 'Keys Decay',
@@ -425,7 +429,8 @@ programs = [
              'name': 'Edge Rate',
              'description': 'Rate at which edges appear',
              'number': fader_cc(0),
-             'default': 3
+             'default': 3,
+             'max': 31
           },
           {
              'name': 'Keyboard Edge Rate',
@@ -475,7 +480,8 @@ programs = [
              'name': 'Edge Rate',
              'description': 'Rate at which edges appear',
              'number': fader_cc(0),
-             'default': 3
+             'default': 3,
+             'max': 31
           },
           {
              'name': 'Keyboard Edge Rate',
