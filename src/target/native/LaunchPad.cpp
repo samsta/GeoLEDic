@@ -27,6 +27,8 @@ enum TopRowFunctions
 
 enum SideColumnFunctions
 {
+    DYNAMIC_BUTTON_FIRST = 7,
+    DYNAMIC_BUTTON_LAST = 2,
     FORCE_BLANK = 0
 };
 
@@ -282,7 +284,7 @@ protected:
 class MidiToggleButton: public MidiButton
 {
 public:
-    MidiToggleButton(PadColor& pad, const CRGB& color, uint8_t cc_num, MidiMessageSink& to_geoledic, bool* active):
+    MidiToggleButton(PadColor& pad, const CRGB& color, uint8_t cc_num, MidiMessageSink& to_geoledic, bool* active = nullptr):
         MidiButton(pad, color, cc_num, to_geoledic),
         m_active(active)
     {
@@ -371,8 +373,8 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_top_row_buttons[PREV_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
     m_top_row_buttons[NEXT_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
 
-    m_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_side_col[FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
-    m_side_col_buttons[FORCE_BLANK] = m_buttons_by_cc[Controls::FORCE_BLANK_CC];
+    m_static_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_side_col[FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
+    m_side_col_buttons[FORCE_BLANK] = m_static_buttons_by_cc[Controls::FORCE_BLANK_CC];
 }
 
 LaunchPad::~LaunchPad()
@@ -492,9 +494,14 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
     if (msg.type() == MidiMessage::CONTROL_CHANGE)
     {
-        if (m_buttons_by_cc[msg.data[1]])
+        if (m_static_buttons_by_cc[msg.data[1]])
         {
-            m_buttons_by_cc[msg.data[1]]->receiveFromGeoledic(msg.data[2]);
+            m_static_buttons_by_cc[msg.data[1]]->receiveFromGeoledic(msg.data[2]);
+            return;
+        }
+        if (m_dynamic_buttons_by_cc[msg.data[1]])
+        {
+            m_dynamic_buttons_by_cc[msg.data[1]]->receiveFromGeoledic(msg.data[2]);
             return;
         }
  
@@ -529,6 +536,24 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         }
         m_current_page = m_pages.begin();
         m_current_page_ix = 0;
+
+        std::vector<uint8_t> buttons(getButtonsForProgram(program_num));
+        m_dynamic_buttons_by_cc.clear();
+        for (unsigned i = 0; i < DYNAMIC_BUTTON_FIRST - DYNAMIC_BUTTON_LAST + 1; i++) // dynamic button numbering is backwards as we want them from top to bottom
+        {
+            uint8_t row = DYNAMIC_BUTTON_FIRST - i;
+            if (i < buttons.size())
+            {
+                uint8_t cc_num = buttons[i];
+                m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiToggleButton>(m_side_col[row], CRGB::Orange, cc_num, m_to_geoledic);
+                m_side_col_buttons[row] = m_dynamic_buttons_by_cc[cc_num];
+            }
+            else
+            {
+                m_side_col_buttons[row].reset();
+            }
+        }
+
         // if we have more than 1 page, enable paging buttons in top row
         if (m_pages.size() > 1)
         {

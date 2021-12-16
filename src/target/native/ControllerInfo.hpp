@@ -17,5 +17,6 @@ struct ControlChangeParams
 };
 
 std::vector<ControlChangeParams> getFadersForProgram(uint8_t program_num);
+std::vector<uint8_t> getButtonsForProgram(uint8_t program_num);
 
 #endif // TARGET_NATIVE_CONTROLLERINFO_HPP

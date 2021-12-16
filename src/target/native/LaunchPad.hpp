@@ -77,7 +77,11 @@ private:
     std::vector<std::shared_ptr<Fader> > m_faders;
     std::map<uint8_t, std::shared_ptr<Fader> > m_faders_by_cc;
 
-    std::map<uint8_t, std::shared_ptr<MidiButton> > m_buttons_by_cc;
+    // static buttons are always there
+    std::map<uint8_t, std::shared_ptr<MidiButton> > m_static_buttons_by_cc;
+    // dynamic buttons change when program changes
+    std::map<uint8_t, std::shared_ptr<MidiButton> > m_dynamic_buttons_by_cc;
+
     std::map<unsigned, std::shared_ptr<Button> > m_top_row_buttons;
     std::map<unsigned, std::shared_ptr<Button> > m_side_col_buttons;
 };
