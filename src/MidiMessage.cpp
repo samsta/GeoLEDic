@@ -54,3 +54,13 @@ MidiMessage MidiMessage::makeNote(uint8_t num, uint8_t velocity, uint8_t channel
    msg.data[2] = velocity;
    return msg;
 }
+
+MidiMessage MidiMessage::makeCC(uint8_t num, uint8_t val, uint8_t channel)
+{
+   MidiMessage msg;
+   msg.length = 3;
+   msg.data[0] = (MidiMessage::CONTROL_CHANGE << 4) | (channel & 0xF);
+   msg.data[1] = num;
+   msg.data[2] = val;
+   return msg;
+}

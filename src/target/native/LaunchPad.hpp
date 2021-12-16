@@ -11,6 +11,8 @@
 #include <list>
 
 class Fader;
+class Button;
+class MidiButton;
 
 struct PadColor
 {
@@ -53,6 +55,9 @@ private:
     void sendColors();
     bool addPadColor(uint8_t*& p, PadColor& pad, unsigned col, unsigned row);
 
+    void handleNextPageButton(uint8_t value);
+    void handlePrevPageButton(uint8_t value);
+
     MidiMessageSink& m_to_launchpad;
     MidiMessageSink& m_to_geoledic;
     union SysexMsg;
@@ -67,13 +72,14 @@ private:
     std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
     unsigned m_current_page_ix;
 
-    bool m_up_pushed;
-    bool m_down_pushed;
-
     bool m_force_blank;
 
     std::vector<std::shared_ptr<Fader> > m_faders;
     std::map<uint8_t, std::shared_ptr<Fader> > m_faders_by_cc;
+
+    std::map<uint8_t, std::shared_ptr<MidiButton> > m_buttons_by_cc;
+    std::map<unsigned, std::shared_ptr<Button> > m_top_row_buttons;
+    std::map<unsigned, std::shared_ptr<Button> > m_side_col_buttons;
 };
 
 #endif // LAUNCHPAD_HPP

@@ -24,7 +24,8 @@ struct MidiMessage
    uint16_t length;
    uint8_t  data[4];
 
-   static MidiMessage makeNote(uint8_t num, uint8_t velocity, uint8_t channel);
+   static MidiMessage makeNote(uint8_t num, uint8_t velocity, uint8_t channel = 0);
+   static MidiMessage makeCC(uint8_t num, uint8_t val, uint8_t channel = 0);
 
    static int lengthForStatusByte(uint8_t first_byte);
 };

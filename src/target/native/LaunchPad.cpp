@@ -31,10 +31,10 @@ enum SideColumnFunctions
 };
 
 const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
-const CRGB COLOR_FADER_FINE_BTN(CRGB::MidnightBlue);
+const CRGB COLOR_FADER_FINE_BTN(CRGB::LightBlue);
 const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
 
-const CRGB dim(const CRGB& c, uint8_t brightness = 10)
+const CRGB dim(const CRGB& c, uint8_t brightness = 50)
 {
     CRGB out(c);
     out.nscale8_video(brightness);
@@ -162,12 +162,7 @@ public:
             break;
         }
 
-        MidiMessage msg;
-        msg.data[0] = MidiMessage::CONTROL_CHANGE << 4;
-        msg.data[1] = m_cc_num;
-        msg.data[2] = m_value;
-        msg.length = 3;
-        m_to_geoledic.sink(msg);
+        m_to_geoledic.sink(MidiMessage::makeCC(m_cc_num, m_value));
     }
 
 private:
@@ -181,7 +176,139 @@ private:
     uint8_t m_value;
 };
 
+class Button
+{
+public:
 
+    enum State {
+        ACTIVE,
+        INACTIVE,
+        DISABLED
+    };
+
+    Button(PadColor& pad, const CRGB& color):
+        m_pad(pad),
+        m_color(color)
+    {
+        setState(DISABLED);
+    }
+
+    virtual ~Button()
+    {
+        setState(DISABLED);
+    }
+
+    void setState(State state)
+    {
+        switch (state)
+        {
+            case ACTIVE:
+                m_pad = m_color;
+                break;
+            case INACTIVE:
+                m_pad = dim(m_color);
+                break;
+            case DISABLED:
+            default:
+                m_pad = CRGB::Black;
+        }
+
+        m_state = state;
+    }
+
+    State getState()
+    {
+        return m_state;
+    }
+
+    bool is(State state)
+    {
+        return getState() == state;
+    }
+
+    virtual void receive(uint8_t value)
+    {
+        if (not is(DISABLED))
+        {
+            setState(value ? ACTIVE : INACTIVE);
+        }
+    }
+
+private:
+    PadColor&  m_pad;
+    const CRGB m_color;
+    State      m_state;
+};
+
+template <class HandlerClass>
+class ButtonWithHandler: public Button
+{
+public:
+    typedef void (HandlerClass::*HandlerFunction)(uint8_t);
+
+    ButtonWithHandler(PadColor& pad, const CRGB& color, HandlerClass& cls, HandlerFunction handler):
+        Button(pad, color),
+        m_cls(cls),
+        m_handler(handler)
+    {}
+
+    virtual void receive(uint8_t value)
+    {
+        (m_cls.*m_handler)(value);
+    }
+
+private:
+    HandlerClass& m_cls;
+    HandlerFunction m_handler;
+};
+
+class MidiButton: public Button
+{
+public:
+    MidiButton(PadColor& pad, const CRGB& color, uint8_t cc_num, MidiMessageSink& to_geoledic):
+        Button(pad, color),
+        m_cc_num(cc_num),
+        m_to_geoledic(to_geoledic)
+    {
+    }
+
+    virtual void receiveFromGeoledic(uint8_t value) = 0;
+
+protected:
+    const uint8_t m_cc_num;
+    MidiMessageSink& m_to_geoledic;
+};
+
+class MidiToggleButton: public MidiButton
+{
+public:
+    MidiToggleButton(PadColor& pad, const CRGB& color, uint8_t cc_num, MidiMessageSink& to_geoledic, bool* active):
+        MidiButton(pad, color, cc_num, to_geoledic),
+        m_active(active)
+    {
+    }
+
+    virtual void receiveFromGeoledic(uint8_t value)
+    {
+        setState(value ? ACTIVE : INACTIVE);
+        if (m_active)
+        {
+            *m_active = value > 0;
+        }
+    }
+
+    virtual void receive(uint8_t value)
+    {
+        // only care about note on
+        if (value == 0) return;
+
+        m_to_geoledic.sink(
+            MidiMessage::makeCC(m_cc_num, is(ACTIVE) ? 0 : 127)); // toggle, so request opposite of current state!
+    }
+
+private:
+    bool* m_active;
+};
 
 union LaunchPad::SysexMsg
 {
@@ -235,12 +362,17 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_pages(),
     m_current_page(),
     m_current_page_ix(),
-    m_up_pushed(false),
-    m_down_pushed(false),
     m_force_blank(false)
 {
     enterMode(PROGRAMMER);
     sendText("Yeehaw!");
+    m_top_row_buttons[FADER_UP]   = std::make_shared<Button>(m_top_row[FADER_UP], COLOR_FADER_FINE_BTN);
+    m_top_row_buttons[FADER_DOWN] = std::make_shared<Button>(m_top_row[FADER_DOWN], COLOR_FADER_FINE_BTN);
+    m_top_row_buttons[PREV_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
+    m_top_row_buttons[NEXT_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
+
+    m_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_side_col[FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
+    m_side_col_buttons[FORCE_BLANK] = m_buttons_by_cc[Controls::FORCE_BLANK_CC];
 }
 
 LaunchPad::~LaunchPad()
@@ -323,15 +455,46 @@ void LaunchPad::sendColors()
     m_to_launchpad.sink(m_sysex_message.msg);
 }
 
+void LaunchPad::handlePrevPageButton(uint8_t value)
+{
+    // only care about note on
+    if (value == 0) return;
+    if (m_current_page_ix == 0) return;
+
+    --m_current_page;
+    --m_current_page_ix;
+    m_current_page->setDirty();
+    m_top_row_buttons[NEXT_PAGE]->setState(Button::ACTIVE);
+    if (m_current_page_ix == 0)
+    {
+        m_top_row_buttons[PREV_PAGE]->setState(Button::INACTIVE);
+    }
+}
+
+void LaunchPad::handleNextPageButton(uint8_t value)
+{
+    // only care about note on
+    if (value == 0) return;
+    if (m_current_page_ix == m_pages.size() - 1) return;
+
+    ++m_current_page;
+    ++m_current_page_ix;
+    m_current_page->setDirty();
+    m_top_row_buttons[PREV_PAGE]->setState(Button::ACTIVE);
+    if (m_current_page_ix == m_pages.size() - 1)
+    {
+        m_top_row_buttons[NEXT_PAGE]->setState(Button::INACTIVE);
+    }
+}
+
+
 void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
     if (msg.type() == MidiMessage::CONTROL_CHANGE)
     {
-
-        if (msg.data[1] == Controls::FORCE_BLANK_CC)
+        if (m_buttons_by_cc[msg.data[1]])
         {
-            m_force_blank = msg.data[2] > 0;
-            m_side_col[FORCE_BLANK] = m_force_blank ? COLOR_FORCE_BLANK_BTN : dim(COLOR_FORCE_BLANK_BTN);
+            m_buttons_by_cc[msg.data[1]]->receiveFromGeoledic(msg.data[2]);
             return;
         }
  
@@ -369,16 +532,16 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         // if we have more than 1 page, enable paging buttons in top row
         if (m_pages.size() > 1)
         {
-            m_top_row[PREV_PAGE] = dim(COLOR_PAGE_BTN);
-            m_top_row[NEXT_PAGE] = COLOR_PAGE_BTN;
+            m_top_row_buttons[PREV_PAGE]->setState(Button::INACTIVE);
+            m_top_row_buttons[NEXT_PAGE]->setState(Button::ACTIVE);
         }
         else
         {
-            m_top_row[PREV_PAGE] = CRGB::Black;
-            m_top_row[NEXT_PAGE] = CRGB::Black;
+            m_top_row_buttons[PREV_PAGE]->setState(Button::DISABLED);
+            m_top_row_buttons[NEXT_PAGE]->setState(Button::DISABLED);
         }
-        m_top_row[FADER_UP] = COLOR_FADER_FINE_BTN;
-        m_top_row[FADER_DOWN] = COLOR_FADER_FINE_BTN;
+        m_top_row_buttons[FADER_UP]->setState(Button::INACTIVE);
+        m_top_row_buttons[FADER_DOWN]->setState(Button::INACTIVE);
         m_side_col[FORCE_BLANK] = m_force_blank ? COLOR_FORCE_BLANK_BTN : dim(COLOR_FORCE_BLANK_BTN);
     }
 }
@@ -393,57 +556,16 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 
         if (row == NUM_ROWS)
         {
-            // top row
-            if (col == PREV_PAGE and m_current_page_ix != 0)
-            { 
-                // only care about note on
-                if (msg.data[2] == 0) return;
-        
-                --m_current_page;
-                --m_current_page_ix;
-                m_current_page->setDirty();
-                m_top_row[NEXT_PAGE] = COLOR_PAGE_BTN;
-                if (m_current_page_ix == 0)
-                {
-                    m_top_row[PREV_PAGE] = dim(COLOR_PAGE_BTN);
-                }
-            }
-            else if (col == NEXT_PAGE and m_current_page_ix != m_pages.size() - 1) 
+            if (m_top_row_buttons[col])
             {
-                // only care about note on
-                if (msg.data[2] == 0) return;
-
-                ++m_current_page;
-                ++m_current_page_ix;
-                m_current_page->setDirty();
-                m_top_row[PREV_PAGE] = COLOR_PAGE_BTN;
-                if (m_current_page_ix == m_pages.size() - 1)
-                {
-                    m_top_row[NEXT_PAGE] = dim(COLOR_PAGE_BTN);
-                }
-            }
-            else if (col == FADER_UP)
-            {
-                m_up_pushed = msg.data[2] > 0;
-            }
-            else if (col == FADER_DOWN)
-            {
-                m_down_pushed = msg.data[2] > 0;
+                m_top_row_buttons[col]->receive(msg.data[2]);
             }
         }
         else if (col == NUM_COLS)
         {
-            if (row == FORCE_BLANK)
+            if (m_side_col_buttons[row])
             {
-                // only care about note on
-                if (msg.data[2] == 0) return;
-
-                MidiMessage msg;
-                msg.data[0] = MidiMessage::CONTROL_CHANGE << 4;
-                msg.data[1] = Controls::FORCE_BLANK_CC;
-                msg.data[2] = m_force_blank ? 0 : 127; // toggle, so request opposite of current state!
-                msg.length = 3;
-                m_to_geoledic.sink(msg);
+                m_side_col_buttons[row]->receive(msg.data[2]);
             }
         }
         else if (col < NUM_COLS and 
@@ -456,11 +578,11 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
             if (col < m_faders.size())
             {
                 Fader::FaderMode mode = Fader::NORMAL;
-                if (m_up_pushed)
+                if (m_top_row_buttons[FADER_UP]->is(Button::ACTIVE))
                 {
                     mode = Fader::FINE_UP;
                 }
-                else if (m_down_pushed)
+                else if (m_top_row_buttons[FADER_DOWN]->is(Button::ACTIVE))
                 {
                     mode = Fader::FINE_DOWN;
                 }
