@@ -51,3 +51,5 @@ $ cd build
 $ cmake ../GeoLEDic -G Xcode
 $ open GeoLEDic.xcodeproj
 ~~~
+
+Note: Linux functionality is not as complete as the macOS one
