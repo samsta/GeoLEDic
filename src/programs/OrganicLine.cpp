@@ -17,20 +17,20 @@ void OrganicLine::runProgram()
       CRGB::Black,
       CRGB::Black,
 
-      CHSV(getHue1()*2, 255, 255),
+      CRGB::Black,
+      CHSV(getHue1()*2, 255, isDisableHue1() ? 0 : 255),
       CRGB::Black,
       CRGB::Black,
-      CHSV(getHue2()*2, 255, 255),
 
       CRGB::Black,
+      CHSV(getHue2()*2, 255, 255),
       CRGB::Black,
-      CHSV(getHue3()*2, 255, 255),
       CRGB::Black,
 
-      CHSV(getHue0()*2, 255, 255),
-      CHSV(getHue1()*2, 255, 255),
-      CHSV(getHue2()*2, 255, 255),
-      CHSV(getHue3()*2, 255, 255),
+      CRGB::Black,
+      CHSV(getHue3()*2, 255, isDisableHue3() ? 0 : 255),
+      CRGB::Black,
+      CRGB::Black,
    };
    
    // MIN and MAX PHI define the extent of the thin line between the first two

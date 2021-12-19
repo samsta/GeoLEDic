@@ -410,13 +410,26 @@ programs = [
              'name': 'Hue 3',
              'number': fader_cc(6),
              'description': 'Hue of the fourth color. Only used if `Use Hues` is set'
-          }
-,          {
+          },
+          {
              'name': 'Use Hues',
              'number': button_cc(0),
              'type': 'toggle',
              'description': 'Instead of the preset palette, use black stripes alternating with stripes of a hue as defined by the hue controls'
           },
+          {
+             'name': 'Disable Hue1',
+             'number': button_cc(1),
+             'type': 'toggle',
+             'description': 'Set color normally controlled by hue 1 to black'
+          },
+          {
+             'name': 'Disable Hue3',
+             'number': button_cc(2),
+             'type': 'toggle',
+             'description': 'Set color normally controlled by hue 3 to black'
+          },
+
 
        ]
     },
