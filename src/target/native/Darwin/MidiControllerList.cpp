@@ -204,7 +204,17 @@ bool MidiControllerList::connect(MIDIDeviceRef dev)
       
       m_in_endpoint  = source;
       m_out_endpoint = MIDIEntityGetDestination(entity, 0);
-      m_controller = new LaunchPad(*this, m_midi_dest);
+
+      CFStringGetCString(name, tmp, sizeof(tmp), 0);
+      if (strcmp(tmp, "LPProMK3 MIDI") == 0)
+      {
+         m_controller = new LaunchPad(*this, m_midi_dest, LaunchPad::PRO_MK3);
+      }
+      else
+      {
+         m_controller = new LaunchPad(*this, m_midi_dest, LaunchPad::MINI_MK3);
+      }
+
       return true;
    }
    return false;

@@ -32,7 +32,12 @@ struct Page {
 class LaunchPad
 {
 public:
-    LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic);
+    enum Model {
+        MINI_MK3,
+        PRO_MK3
+    };
+
+    LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic, Model model);
     ~LaunchPad();
 
     void updateFromMidi(const MidiMessage& msg);
@@ -60,6 +65,7 @@ private:
 
     MidiMessageSink& m_to_launchpad;
     MidiMessageSink& m_to_geoledic;
+    Model  m_model;
     union SysexMsg;
     SysexMsg& m_sysex_message;
 

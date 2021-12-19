@@ -7,7 +7,8 @@
 namespace {
 const uint8_t HEADER_LENGTH = 6;
 const unsigned MAX_SYSEX_DATA_LENGTH = 256;
-const uint8_t SYSEX_HEADER[HEADER_LENGTH] = {0xF0, 0x00, 0x20, 0x29, 0x02, 0x0D};
+const uint8_t SYSEX_HEADER_MINI_MK3[HEADER_LENGTH] = {0xF0, 0x00, 0x20, 0x29, 0x02, 0x0D};
+const uint8_t SYSEX_HEADER_PRO_MK3[HEADER_LENGTH] = {0xF0, 0x00, 0x20, 0x29, 0x02, 0x0E};
 const uint8_t SYSEX_END = 0xF7;
 
 enum SysexCommand 
@@ -314,9 +315,9 @@ private:
 
 union LaunchPad::SysexMsg
 {
-    SysexMsg()
+    SysexMsg(Model model)
     {
-        std::copy_n(SYSEX_HEADER, HEADER_LENGTH, raw.header);
+        std::copy_n(model == MINI_MK3 ? SYSEX_HEADER_MINI_MK3 : SYSEX_HEADER_PRO_MK3, HEADER_LENGTH, raw.header);
     }
 
     MidiMessage msg;
@@ -355,10 +356,11 @@ void Page<LaunchPad::NUM_COLS, LaunchPad::NUM_ROWS>::setDirty()
     }
 }
 
-LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic):
+LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic, Model model):
     m_to_launchpad(to_launchpad),
     m_to_geoledic(to_geoledic),
-    m_sysex_message(*new SysexMsg()),
+    m_model(model),
+    m_sysex_message(*new SysexMsg(m_model)),
     m_top_row(),
     m_side_col(),
     m_pages(),
