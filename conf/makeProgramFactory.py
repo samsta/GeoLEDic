@@ -61,7 +61,7 @@ void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
         combo_preview_value = program_names[m_program_number];
     }
     
-    if (ImGui::BeginCombo("Program", combo_preview_value))
+    if (ImGui::BeginCombo("Program", combo_preview_value, ImGuiComboFlags_HeightLarge))
     {
         for (int n = 0; n < IM_ARRAYSIZE(program_names); n++)
         {
