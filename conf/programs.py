@@ -178,16 +178,16 @@ programs = [
                'max': 63
             },
             {
-                'name': 'Downwards',
-                'number': button_cc(0),
-                'type': 'toggle',
-                'description': 'If set, flames start at the top instead of the bottom'
-            },
-            {
                 'name': 'Reverse Palette',
                 'number': button_cc(1),
                 'type': 'toggle',
                 'description': 'If set, the color palette is reversed'
+            },
+            {
+                'name': 'Downwards',
+                'number': button_cc(2),
+                'type': 'toggle',
+                'description': 'If set, flames start at the top instead of the bottom'
             },
             {
                 'name': 'Palette',
