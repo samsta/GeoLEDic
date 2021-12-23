@@ -4,7 +4,9 @@ def fader_cc(num):
     return 16 + num
 
 def button_cc(num):
-    return 32 + num
+    # gotta skip 32 as it's used for 'bank select', and
+    # Ableton Live doesn't record it
+    return 33 + num
 
 def enum_cc(num):
     return 48 + num
@@ -179,13 +181,13 @@ programs = [
             },
             {
                 'name': 'Reverse Palette',
-                'number': button_cc(1),
+                'number': button_cc(0),
                 'type': 'toggle',
                 'description': 'If set, the color palette is reversed'
             },
             {
                 'name': 'Downwards',
-                'number': button_cc(2),
+                'number': button_cc(1),
                 'type': 'toggle',
                 'description': 'If set, flames start at the top instead of the bottom'
             },
