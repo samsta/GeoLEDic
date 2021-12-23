@@ -240,6 +240,8 @@ void ${classname}::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
         }
     }
 $menu
+ 
+    ImGui::Separator();
     {
         bool v = getControlValue(FORCE_BLANK_CC) > 0;
         bool prev = v;
@@ -262,10 +264,6 @@ $menu
 void ${classname}::sendSnapshot(MidiSource::MidiSender* sender)
 {
     if (sender == nullptr) return;
-    
-    // dummy controller to trigger overdub. Must be learned in DAW!
-    sender->sendControlChange(ARM_OVERDUB_CC, 127);
-
     sender->sendProgramChange($program_number);
     sender->sendControlChange(BRIGHTNESS_CC, m_brightness_raw);
 $control_snapshot

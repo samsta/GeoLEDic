@@ -60,3 +60,17 @@ void Controls::setControlValue(uint8_t cc_num, uint8_t value)
 
    m_control_values[cc_num] = value;
 }
+
+#ifdef WITH_GFX
+#include <unistd.h>
+void Controls::sendSnapshotWithTrigger(MidiSource::MidiSender* sender)
+{
+   if (sender == nullptr) return;
+    
+   sender->sendControlChange(RECORD_CC, 127);
+   sendSnapshot(sender);
+   // Yuck! Ableton needs this sleep between start and stop or else it won't start :-(
+   usleep(500000);
+   sender->sendControlChange(STOP_CC, 127);
+}
+#endif

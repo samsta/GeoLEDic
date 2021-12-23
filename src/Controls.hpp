@@ -10,13 +10,18 @@ public:
    enum SpecialControllers {
       BRIGHTNESS_CC = 7,
       FORCE_BLANK_CC = 80,
-      ARM_OVERDUB_CC = 81
+      RECORD_CC = 81,
+      STOP_CC = 82
    };
 
    Controls();
    virtual void controlChange(uint8_t cc_num, uint8_t value);
    
    static bool& getForceBlank();
+
+#ifdef WITH_GFX
+   virtual void sendSnapshotWithTrigger(MidiSource::MidiSender* sender);
+#endif
 
 protected:
    uint8_t getBrightness() const;

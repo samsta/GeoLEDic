@@ -50,17 +50,25 @@ void MidiMenu::drawMenu()
       {
          if (ImGui::Button("Send Snapshot"))
          {
-            m_factory.program().sendSnapshot(&sender);
+            m_factory.program().sendSnapshotWithTrigger(&sender);
          }
          ImGui::SameLine(); HelpMarker("Send the current program number and all controller values");
 
-         if (ImGui::Button("Learn overdub trigger"))
+         if (ImGui::Button("Learn 'record' trigger"))
          {
-            sender.sendControlChange(Controls::ARM_OVERDUB_CC, 127);
+            sender.sendControlChange(Controls::RECORD_CC, 127);
          }
          ImGui::SameLine(); HelpMarker("Send the trigger CC that's sent as the first message in a snapshot. "
                                        "Assign this to a function suitable to start recording the snapshot, "
-                                       "e.g. MIDI overdub in Ableton");
+                                       "e.g. 'session record' in Ableton");
+         if (ImGui::Button("Learn 'stop' trigger"))
+         {
+            sender.sendControlChange(Controls::STOP_CC, 127);
+         }
+         ImGui::SameLine(); HelpMarker("Send the trigger CC that's sent as the last message in a snapshot. "
+                                       "Assign this to a function suitable to end recording the snapshot, "
+                                       "e.g. 'stop' in Ableton");
+
       }
       ImGui::EndDisabled();
    }

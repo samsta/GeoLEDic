@@ -19,6 +19,7 @@ public:
 #ifdef WITH_GFX
    virtual void drawMenu(MidiSource::MidiSender*, Piano*){};
    virtual void sendSnapshot(MidiSource::MidiSender*){};
+   virtual void sendSnapshotWithTrigger(MidiSource::MidiSender*){};
 #endif
 };
 

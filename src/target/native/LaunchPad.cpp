@@ -559,7 +559,7 @@ void LaunchPad::handleNextPageButton(uint8_t value)
 
 void LaunchPad::handleSendSnapshotButton(uint8_t value)
 {
-    getProgramFactory().program().sendSnapshot(getMidiSource().getSender());
+    getProgramFactory().program().sendSnapshotWithTrigger(getMidiSource().getSender());
 }
 
 void LaunchPad::updateFromMidi(const MidiMessage& msg)
