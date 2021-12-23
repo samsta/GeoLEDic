@@ -9,7 +9,8 @@ class Controls: public Program
 public:
    enum SpecialControllers {
       BRIGHTNESS_CC = 7,
-      FORCE_BLANK_CC = 80
+      FORCE_BLANK_CC = 80,
+      ARM_OVERDUB_CC = 81
    };
 
    Controls();

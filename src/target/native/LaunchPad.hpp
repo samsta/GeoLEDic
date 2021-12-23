@@ -58,10 +58,11 @@ private:
     void enterMode(Mode mode);
     void sendText(const char* text, const CRGB& color = CRGB::Red);
     void sendColors();
-    bool addPadColor(uint8_t*& p, PadColor& pad, unsigned col, unsigned row);
+    bool addPadColor(uint8_t*& p, PadColor& pad, int col, int row);
 
     void handleNextPageButton(uint8_t value);
     void handlePrevPageButton(uint8_t value);
+    void handleSendSnapshotButton(uint8_t value);
 
     MidiMessageSink& m_to_launchpad;
     MidiMessageSink& m_to_geoledic;
@@ -72,7 +73,8 @@ private:
 
 
     PadColor m_top_row[NUM_COLS];
-    PadColor m_side_col[NUM_ROWS];
+    PadColor m_right_col[NUM_ROWS];
+    PadColor m_left_col[NUM_ROWS];
 
     std::list<Page<NUM_ROWS, NUM_COLS> > m_pages;
     std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
@@ -89,7 +91,13 @@ private:
     std::map<uint8_t, std::shared_ptr<MidiButton> > m_dynamic_buttons_by_cc;
 
     std::map<unsigned, std::shared_ptr<Button> > m_top_row_buttons;
-    std::map<unsigned, std::shared_ptr<Button> > m_side_col_buttons;
+    std::map<unsigned, std::shared_ptr<Button> > m_right_col_buttons;
+    std::map<unsigned, std::shared_ptr<Button> > m_left_col_buttons;
+
+    std::shared_ptr<Button> m_next_page_button;
+    std::shared_ptr<Button> m_prev_page_button;
+    std::shared_ptr<Button> m_fader_up_button;
+    std::shared_ptr<Button> m_fader_down_button;
 };
 
 #endif // LAUNCHPAD_HPP

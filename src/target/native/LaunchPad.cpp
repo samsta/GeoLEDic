@@ -1,6 +1,7 @@
 #include "LaunchPad.hpp"
 #include "ControllerInfo.hpp"
 #include "Controls.hpp"
+#include "GeoLEDic.hpp" // yuck!
 #include <algorithm>
 #include <iostream>
 
@@ -18,24 +19,50 @@ enum SysexCommand
     SET_TEXT = 0x07
 };
 
-enum TopRowFunctions
-{
-    FADER_UP = 0,
-    FADER_DOWN = 1,
-    PREV_PAGE = 2,
-    NEXT_PAGE = 3
-};
+namespace LpMini {
+    enum TopRowFunctions
+    {
+        FADER_UP = 0,
+        FADER_DOWN = 1,
+        PREV_PAGE = 2,
+        NEXT_PAGE = 3
+    };
 
-enum SideColumnFunctions
-{
-    DYNAMIC_BUTTON_FIRST = 7,
-    DYNAMIC_BUTTON_LAST = 2,
-    FORCE_BLANK = 0
-};
+    enum SideColumnFunctions
+    {
+        DYNAMIC_BUTTON_FIRST = 7,
+        DYNAMIC_BUTTON_LAST = 2,
+        SEND_SNAPSHOT = 1,
+        FORCE_BLANK = 0
+    };
+}
+
+namespace LpPro {
+    enum TopRowFunctions
+    {
+        PREV_PAGE = 0,
+        NEXT_PAGE = 1
+    };
+
+    enum LeftColumnFunctions
+    {
+        FADER_UP = 7,
+        FADER_DOWN = 6,
+        FORCE_BLANK = 0
+    };
+
+    enum RightColumnFunctions
+    {
+        DYNAMIC_BUTTON_FIRST = 7,
+        DYNAMIC_BUTTON_LAST = 2,
+        SEND_SNAPSHOT = 0
+    };
+}
 
 const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
 const CRGB COLOR_FADER_FINE_BTN(CRGB::LightBlue);
 const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
+const CRGB COLOR_SEND_SNAPSHOT_BTN(CRGB::Green);
 
 const CRGB dim(const CRGB& c, uint8_t brightness = 50)
 {
@@ -362,7 +389,7 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_model(model),
     m_sysex_message(*new SysexMsg(m_model)),
     m_top_row(),
-    m_side_col(),
+    m_right_col(),
     m_pages(),
     m_current_page(),
     m_current_page_ix(),
@@ -370,13 +397,44 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
 {
     enterMode(PROGRAMMER);
     sendText("Yeehaw!");
-    m_top_row_buttons[FADER_UP]   = std::make_shared<Button>(m_top_row[FADER_UP], COLOR_FADER_FINE_BTN);
-    m_top_row_buttons[FADER_DOWN] = std::make_shared<Button>(m_top_row[FADER_DOWN], COLOR_FADER_FINE_BTN);
-    m_top_row_buttons[PREV_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
-    m_top_row_buttons[NEXT_PAGE]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
 
-    m_static_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_side_col[FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
-    m_side_col_buttons[FORCE_BLANK] = m_static_buttons_by_cc[Controls::FORCE_BLANK_CC];
+    if (model == MINI_MK3)
+    {
+        m_fader_up_button   = std::make_shared<Button>(m_top_row[LpMini::FADER_UP], COLOR_FADER_FINE_BTN);
+        m_fader_down_button = std::make_shared<Button>(m_top_row[LpMini::FADER_DOWN], COLOR_FADER_FINE_BTN);
+        m_top_row_buttons[LpMini::FADER_UP]   = m_fader_up_button;
+        m_top_row_buttons[LpMini::FADER_DOWN] = m_fader_down_button;
+
+        m_prev_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpMini::PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
+        m_next_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpMini::NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
+        m_top_row_buttons[LpMini::PREV_PAGE]  = m_prev_page_button;
+        m_top_row_buttons[LpMini::NEXT_PAGE]  = m_next_page_button;
+
+        m_static_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_right_col[LpMini::FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
+        m_right_col_buttons[LpMini::FORCE_BLANK] = m_static_buttons_by_cc[Controls::FORCE_BLANK_CC];
+        m_right_col_buttons[LpMini::FORCE_BLANK]->setState(Button::INACTIVE);
+    }
+    else
+    {
+        m_fader_up_button   = std::make_shared<Button>(m_left_col[LpPro::FADER_UP], COLOR_FADER_FINE_BTN);
+        m_fader_down_button = std::make_shared<Button>(m_left_col[LpPro::FADER_DOWN], COLOR_FADER_FINE_BTN);
+        m_left_col_buttons[LpPro::FADER_UP]   = m_fader_up_button;
+        m_left_col_buttons[LpPro::FADER_DOWN] = m_fader_down_button;
+
+        m_prev_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpPro::PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
+        m_next_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpPro::NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
+        m_top_row_buttons[LpPro::PREV_PAGE]  = m_prev_page_button;
+        m_top_row_buttons[LpPro::NEXT_PAGE]  = m_next_page_button;
+
+        m_static_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_left_col[LpPro::FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
+        m_left_col_buttons[LpPro::FORCE_BLANK] = m_static_buttons_by_cc[Controls::FORCE_BLANK_CC];
+        m_left_col_buttons[LpPro::FORCE_BLANK]->setState(Button::INACTIVE);
+
+        m_right_col_buttons[LpPro::SEND_SNAPSHOT]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_right_col[LpPro::SEND_SNAPSHOT], COLOR_SEND_SNAPSHOT_BTN, *this, &LaunchPad::handleSendSnapshotButton);
+        m_right_col_buttons[LpPro::SEND_SNAPSHOT]->setState(Button::ACTIVE);
+    }
+    m_fader_up_button->setState(Button::ACTIVE);
+    m_fader_down_button->setState(Button::ACTIVE);
 }
 
 LaunchPad::~LaunchPad()
@@ -409,7 +467,7 @@ void LaunchPad::sendText(const char* text, const CRGB& color)
     m_to_launchpad.sink(m_sysex_message.msg);
 }
 
-bool LaunchPad::addPadColor(uint8_t*& p, PadColor& pad, unsigned col, unsigned row)
+bool LaunchPad::addPadColor(uint8_t*& p, PadColor& pad, int col, int row)
 {
     if (p - m_sysex_message.raw.data + 6 > MAX_SYSEX_DATA_LENGTH)
     {
@@ -442,7 +500,15 @@ void LaunchPad::sendColors()
 
     for (unsigned row = 0; row < NUM_ROWS; row++)
     {
-        if (not addPadColor(p, m_side_col[row], NUM_COLS, row)) break;
+        if (not addPadColor(p, m_right_col[row], NUM_COLS, row)) break;
+    }
+
+    if (m_model == PRO_MK3)
+    {
+        for (unsigned row = 0; row < NUM_ROWS; row++)
+        {
+            if (not addPadColor(p, m_left_col[row], -1, row)) break;
+        }
     }
 
     for (unsigned row = 0; row < NUM_ROWS; row++)
@@ -468,10 +534,10 @@ void LaunchPad::handlePrevPageButton(uint8_t value)
     --m_current_page;
     --m_current_page_ix;
     m_current_page->setDirty();
-    m_top_row_buttons[NEXT_PAGE]->setState(Button::ACTIVE);
+    m_next_page_button->setState(Button::ACTIVE);
     if (m_current_page_ix == 0)
     {
-        m_top_row_buttons[PREV_PAGE]->setState(Button::INACTIVE);
+        m_prev_page_button->setState(Button::INACTIVE);
     }
 }
 
@@ -484,13 +550,17 @@ void LaunchPad::handleNextPageButton(uint8_t value)
     ++m_current_page;
     ++m_current_page_ix;
     m_current_page->setDirty();
-    m_top_row_buttons[PREV_PAGE]->setState(Button::ACTIVE);
+    m_prev_page_button->setState(Button::ACTIVE);
     if (m_current_page_ix == m_pages.size() - 1)
     {
-        m_top_row_buttons[NEXT_PAGE]->setState(Button::INACTIVE);
+        m_next_page_button->setState(Button::INACTIVE);
     }
 }
 
+void LaunchPad::handleSendSnapshotButton(uint8_t value)
+{
+    getProgramFactory().program().sendSnapshot(getMidiSource().getSender());
+}
 
 void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
@@ -541,35 +611,32 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
 
         std::vector<uint8_t> buttons(getButtonsForProgram(program_num));
         m_dynamic_buttons_by_cc.clear();
-        for (unsigned i = 0; i < DYNAMIC_BUTTON_FIRST - DYNAMIC_BUTTON_LAST + 1; i++) // dynamic button numbering is backwards as we want them from top to bottom
+        for (unsigned i = 0; i < LpMini::DYNAMIC_BUTTON_FIRST - LpMini::DYNAMIC_BUTTON_LAST + 1; i++) // dynamic button numbering is backwards as we want them from top to bottom
         {
-            uint8_t row = DYNAMIC_BUTTON_FIRST - i;
+            uint8_t row = LpMini::DYNAMIC_BUTTON_FIRST - i;
             if (i < buttons.size())
             {
                 uint8_t cc_num = buttons[i];
-                m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiToggleButton>(m_side_col[row], CRGB::Orange, cc_num, m_to_geoledic);
-                m_side_col_buttons[row] = m_dynamic_buttons_by_cc[cc_num];
+                m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiToggleButton>(m_right_col[row], CRGB::Orange, cc_num, m_to_geoledic);
+                m_right_col_buttons[row] = m_dynamic_buttons_by_cc[cc_num];
             }
             else
             {
-                m_side_col_buttons[row].reset();
+                m_right_col_buttons[row].reset();
             }
         }
 
         // if we have more than 1 page, enable paging buttons in top row
         if (m_pages.size() > 1)
         {
-            m_top_row_buttons[PREV_PAGE]->setState(Button::INACTIVE);
-            m_top_row_buttons[NEXT_PAGE]->setState(Button::ACTIVE);
+            m_prev_page_button->setState(Button::INACTIVE);
+            m_next_page_button->setState(Button::ACTIVE);
         }
         else
         {
-            m_top_row_buttons[PREV_PAGE]->setState(Button::DISABLED);
-            m_top_row_buttons[NEXT_PAGE]->setState(Button::DISABLED);
+            m_prev_page_button->setState(Button::DISABLED);
+            m_next_page_button->setState(Button::DISABLED);
         }
-        m_top_row_buttons[FADER_UP]->setState(Button::INACTIVE);
-        m_top_row_buttons[FADER_DOWN]->setState(Button::INACTIVE);
-        m_side_col[FORCE_BLANK] = m_force_blank ? COLOR_FORCE_BLANK_BTN : dim(COLOR_FORCE_BLANK_BTN);
     }
 }
 
@@ -578,8 +645,8 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
     if (msg.type() == MidiMessage::NOTE_ON || msg.type() == MidiMessage::CONTROL_CHANGE)
     {
 
-        uint8_t row = (msg.data[1] / 10) - 1;
-        uint8_t col = (msg.data[1] % 10) - 1;
+        int row = int(msg.data[1] / 10) - 1;
+        int col = int(msg.data[1] % 10) - 1;
 
         if (row == NUM_ROWS)
         {
@@ -590,9 +657,16 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
         }
         else if (col == NUM_COLS)
         {
-            if (m_side_col_buttons[row])
+            if (m_right_col_buttons[row])
             {
-                m_side_col_buttons[row]->receive(msg.data[2]);
+                m_right_col_buttons[row]->receive(msg.data[2]);
+            }
+        }
+        else if (col == -1)
+        {
+            if (m_left_col_buttons[row])
+            {
+                m_left_col_buttons[row]->receive(msg.data[2]);
             }
         }
         else if (col < NUM_COLS and 
@@ -605,11 +679,11 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
             if (col < m_faders.size())
             {
                 Fader::FaderMode mode = Fader::NORMAL;
-                if (m_top_row_buttons[FADER_UP]->is(Button::ACTIVE))
+                if (m_fader_up_button->is(Button::ACTIVE))
                 {
                     mode = Fader::FINE_UP;
                 }
-                else if (m_top_row_buttons[FADER_DOWN]->is(Button::ACTIVE))
+                else if (m_fader_down_button->is(Button::ACTIVE))
                 {
                     mode = Fader::FINE_DOWN;
                 }

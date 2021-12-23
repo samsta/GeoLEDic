@@ -262,6 +262,10 @@ $menu
 void ${classname}::sendSnapshot(MidiSource::MidiSender* sender)
 {
     if (sender == nullptr) return;
+    
+    // dummy controller to trigger overdub. Must be learned in DAW!
+    sender->sendControlChange(ARM_OVERDUB_CC, 127);
+
     sender->sendProgramChange($program_number);
     sender->sendControlChange(BRIGHTNESS_CC, m_brightness_raw);
 $control_snapshot

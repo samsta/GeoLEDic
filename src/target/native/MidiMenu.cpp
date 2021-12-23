@@ -1,5 +1,6 @@
 #include "MidiMenu.hpp"
 #include "ImGui.hpp"
+#include "Controls.hpp"
 
 MidiMenu::MidiMenu(MidiSource& midi_source, ProgramFactory& program_factory):
    m_midi_source(midi_source),
@@ -46,12 +47,22 @@ void MidiMenu::drawMenu()
                                     "and controller values is sent immediately");
 
       ImGui::BeginDisabled(not sender.enabled());
-      if (ImGui::Button("Send Snapshot"))
       {
-         m_factory.program().sendSnapshot(m_midi_source.getSender());
+         if (ImGui::Button("Send Snapshot"))
+         {
+            m_factory.program().sendSnapshot(&sender);
+         }
+         ImGui::SameLine(); HelpMarker("Send the current program number and all controller values");
+
+         if (ImGui::Button("Learn overdub trigger"))
+         {
+            sender.sendControlChange(Controls::ARM_OVERDUB_CC, 127);
+         }
+         ImGui::SameLine(); HelpMarker("Send the trigger CC that's sent as the first message in a snapshot. "
+                                       "Assign this to a function suitable to start recording the snapshot, "
+                                       "e.g. MIDI overdub in Ableton");
       }
       ImGui::EndDisabled();
-      ImGui::SameLine(); HelpMarker("Send the current program number and all controller values");
    }
 }
 
