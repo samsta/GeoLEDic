@@ -68,9 +68,10 @@ void Controls::sendSnapshotWithTrigger(MidiSource::MidiSender* sender)
    if (sender == nullptr) return;
     
    sender->sendControlChange(RECORD_CC, 127);
+   usleep(50000);
    sendSnapshot(sender);
    // Yuck! Ableton needs this sleep between start and stop or else it won't start :-(
-   usleep(500000);
+   usleep(300000);
    sender->sendControlChange(STOP_CC, 127);
 }
 #endif
