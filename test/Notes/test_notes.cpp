@@ -6,8 +6,8 @@ const unsigned NUM_TRIANGLES = 123;
 const unsigned NUM_BLOBS = 52;
 
 enum {
-   CHANNEL_SHAPES = 0,
-   CHANNEL_SINGLE_NOTES = 1
+   CHANNEL_SHAPES = 1,
+   CHANNEL_SINGLE_NOTES = 0
 };
 
 class TestShapesFromNotes: public testing::Test, public ShapesFromNotes
