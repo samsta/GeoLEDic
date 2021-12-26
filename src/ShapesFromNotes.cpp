@@ -156,7 +156,7 @@ bool ShapesFromNotes::isAnyTriangleSet() const
 
 void ShapesFromNotes::noteOn(uint8_t note, uint8_t velocity, uint8_t channel)
 {
-   if (channel == 0)
+   if (channel == 1)
    {
       if (note < NOTE_C3)
       {

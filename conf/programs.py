@@ -14,7 +14,15 @@ def enum_cc(num):
 keyzones = {
    'ShapesFromNotes': 
    [
-      [ # channel 0
+      [ # channel 1
+        {
+            'name': 'Triangles',
+            'from': 0,
+            'to': 123,
+            'color': 'Orange'
+        }
+      ],
+      [ # channel 2
         {
             'name': 'Pentagon 0',
             'from': 12,
@@ -74,14 +82,6 @@ keyzones = {
             'from': 111,
             'to': 111,
             'color': 'Purple'
-        }
-      ],
-      [ # channel 1
-        {
-            'name': 'Triangles',
-            'from': 0,
-            'to': 123,
-            'color': 'Orange'
         }
       ]
    ],
