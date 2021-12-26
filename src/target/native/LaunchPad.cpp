@@ -433,8 +433,8 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
         m_right_col_buttons[LpPro::SEND_SNAPSHOT]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_right_col[LpPro::SEND_SNAPSHOT], COLOR_SEND_SNAPSHOT_BTN, *this, &LaunchPad::handleSendSnapshotButton);
         m_right_col_buttons[LpPro::SEND_SNAPSHOT]->setState(Button::ACTIVE);
     }
-    m_fader_up_button->setState(Button::ACTIVE);
-    m_fader_down_button->setState(Button::ACTIVE);
+    m_fader_up_button->setState(Button::INACTIVE);
+    m_fader_down_button->setState(Button::INACTIVE);
 }
 
 LaunchPad::~LaunchPad()
