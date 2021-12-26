@@ -676,7 +676,7 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
             if (msg.data[2] == 0) return;
 
             col += NUM_COLS * m_current_page_ix;
-            if (col < m_faders.size())
+            if (unsigned(col) < m_faders.size())
             {
                 Fader::FaderMode mode = Fader::NORMAL;
                 if (m_fader_up_button->is(Button::ACTIVE))
