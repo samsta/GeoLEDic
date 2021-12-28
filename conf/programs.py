@@ -212,7 +212,8 @@ programs = [
     {
         'program':'MovingRainbow',
         'name':'Moving Rainbow',
-        'base': 'Notes',
+        'base': 'DecayingShapesFromNotes',
+        'keyzones': keyzones['ShapesFromNotes'],
         'controls': [
             {
                 'name': 'Speed Vertical',
@@ -234,7 +235,20 @@ programs = [
                 'number': fader_cc(3),
                 'description': 'Larger stride means faster cycling through the color wheel, i.e. more horizontal repetitions of the rainbow',
                 'max': 63
+            },
+            {
+                'name': 'Keys Decay',
+                'number': fader_cc(4),
+                'default': 3,
+                'description': 'Rate at which keyboard triggered shapes decay'
+            },
+            {
+                'name': 'Keys Only',
+                'number': button_cc(0),
+                'type': 'toggle',
+                'description': 'If set, only the triangles/shapes corresponding to the pressed keys are turned on. If unset, all triangles are turned on, but the ones corresponding to the pressed keys turn off.'
             }
+
         ]
     },
     {

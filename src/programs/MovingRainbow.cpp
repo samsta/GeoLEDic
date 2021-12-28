@@ -8,10 +8,24 @@ MovingRainbow::MovingRainbow(const DomeWrapper& dome):
 
 void MovingRainbow::runProgram()
 {
-   for (Triangle& t: m_dome)
+   setDecayRate(getKeysDecay());
+   for (unsigned t_ix = 0; t_ix < m_dome.size(); t_ix++)
    {
+      Triangle& t(m_dome[t_ix]);
+      uint8_t velocity = getTriangleValue(t_ix) * 2;
       CHSV hsv;
-      hsv.val = getBrightness();
+      if (isKeysOnly())
+      {
+         hsv.val = velocity;
+      }
+      else if (velocity > getBrightness())
+      {
+         hsv.val = 0;
+      }
+      else
+      {
+         hsv.val = getBrightness() - velocity;
+      }
       hsv.sat = 255;
       
       for (unsigned k = 0; k < 3; k ++)
