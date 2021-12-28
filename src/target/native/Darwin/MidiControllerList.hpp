@@ -36,7 +36,6 @@ private:
    MIDIPortRef             m_in_port;
    MIDIPortRef             m_out_port;
    std::queue<MidiMessage> m_packets;
-   pthread_mutex_t         m_midi_mutex;
    pthread_mutex_t         m_device_mutex;
    std::map<MIDIDeviceRef, std::string> m_devices;
    MIDIDeviceRef           m_selected_device;

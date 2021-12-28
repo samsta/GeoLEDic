@@ -8,7 +8,6 @@ MidiControllerList::MidiControllerList(MidiMessageSink& midi_dest):
    m_controller(nullptr),
    m_midi_dest(midi_dest)
 {
-    pthread_mutex_init(&m_midi_mutex, NULL);
     pthread_mutex_init(&m_device_mutex, NULL);
 }
 
@@ -45,7 +44,6 @@ void MidiControllerList::processMidiPackets(const MIDIPacketList *packets)
    
     // push messages into a queue to hand them over to the working thread which
     // will consume them via read()
-    //pthread_mutex_lock(&m_midi_mutex);
     for (unsigned int i = 0; i < packets->numPackets; ++i)
     {
         int remaining_length = packet->length;
@@ -63,12 +61,9 @@ void MidiControllerList::processMidiPackets(const MIDIPacketList *packets)
             p += length;
             remaining_length -= length;
             if (m_controller) m_controller->updateFromCtrl(msg);
-            //m_packets.push(msg);
-            //std::cout << msg << std::endl;
         }
         packet = MIDIPacketNext(packet);
     }
-    //pthread_mutex_unlock(&m_midi_mutex);
 }
 
 void MidiControllerList::refreshPorts()
@@ -231,8 +226,6 @@ void MidiControllerList::disconnect(MIDIDeviceRef dev)
 void MidiControllerList::sink(const MidiMessage& msg)
 {
    if (m_out_endpoint == 0) return;
-
-    std::cout << "OUT: " << msg << std::endl;
 
    uint8_t buf[512];
    MIDIPacketList* packet_list = reinterpret_cast<MIDIPacketList*>(buf);
