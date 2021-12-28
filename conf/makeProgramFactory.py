@@ -23,11 +23,18 @@ ProgramFactory::ProgramFactory(const DomeWrapper& dome, const Strips& strips):
       m_strips(strips),
       m_current_program(nullptr)
 {
+#ifdef WITH_GFX
+    pthread_mutex_init(&m_program_mutex, nullptr);
+#endif
 }
 
 void ProgramFactory::changeProgram(uint8_t program)
 {
+   // give other threads a way to prevent the program instance
+   //  they're currently using from getting destroyed
+   lock();
    delete m_current_program;
+   unlock();
    // clear all LEDs
    m_strips.clear();
    switch (program)
@@ -47,6 +54,20 @@ Program& ProgramFactory::program()
        changeProgram(0);
    }
    return *m_current_program;
+}
+
+void ProgramFactory::lock()
+{
+#ifdef WITH_GFX
+    pthread_mutex_lock(&m_program_mutex);
+#endif
+}
+
+void ProgramFactory::unlock()
+{
+#ifdef WITH_GFX
+    pthread_mutex_unlock(&m_program_mutex);
+#endif
 }
 
 #ifdef WITH_GFX

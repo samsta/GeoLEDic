@@ -559,7 +559,12 @@ void LaunchPad::handleNextPageButton(uint8_t value)
 
 void LaunchPad::handleSendSnapshotButton(uint8_t value)
 {
+    // the LaunchPad runs in a separate thread, we don't
+    //  want the program change to be actioned upon while
+    //  we're still using the program, hence we lock it
+    getProgramFactory().lock();
     getProgramFactory().program().sendSnapshotWithTrigger(getMidiSource().getSender());
+    getProgramFactory().unlock();
 }
 
 void LaunchPad::updateFromMidi(const MidiMessage& msg)
