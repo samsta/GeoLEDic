@@ -265,6 +265,9 @@ void ${classname}::sendSnapshot(MidiSource::MidiSender* sender)
 {
     if (sender == nullptr) return;
     sender->sendProgramChange($program_number);
+    // because Ableton Live does not record program changes, let's send them with a CC, too.
+    // Add one to avoid confusion since the UI presents program changes from 1:128 and control changes 0:127
+    sender->sendControlChange(PROGRAM_CHANGE_CC, $program_number+1);
     sender->sendControlChange(BRIGHTNESS_CC, m_brightness_raw);
 $control_snapshot
 }

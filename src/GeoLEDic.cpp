@@ -1,5 +1,6 @@
 #include "GeoLEDic.hpp"
 #include "programs/Diagnostic.hpp"
+#include "Controls.hpp"
 #ifdef WITH_GFX
 #include "Serial.hpp"
 #endif
@@ -35,7 +36,16 @@ void loopGeoLEDic()
             factory.changeProgram(msg->data[1]);
             break;
          case MidiMessage::CONTROL_CHANGE:
-            factory.program().controlChange(msg->data[1], msg->data[2]);
+            if (msg->data[1] == Controls::PROGRAM_CHANGE_CC)
+            {
+               // Ableton Live does not deal well with program changes, so we've encoded them as control changes.
+               // Offset by 1 to make it a little less confusing
+               factory.changeProgram(msg->data[2] - 1);
+            }
+            else
+            {
+               factory.program().controlChange(msg->data[1], msg->data[2]);
+            }
             break;
          default:
             break;
