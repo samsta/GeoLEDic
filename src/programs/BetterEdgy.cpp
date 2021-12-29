@@ -25,7 +25,8 @@ void BetterEdgy::runProgram()
    {
       Triangle& t(m_dome[t_ix]);
 
-      uint8_t edge_rate = getTriangleValue(t_ix) ? getKeyboardEdgeRate() : base_edge_rate;
+      uint8_t edge_rate = getTriangleValue(t_ix) ? getKeyboardEdgeRate()*2 : base_edge_rate;
+      uint8_t brightness = getTriangleValue(t_ix) ? getTriangleValue(t_ix)*2 : getBrightness();
 
       for (unsigned e_ix = 0; e_ix < 3; e_ix++)
       {
@@ -38,7 +39,7 @@ void BetterEdgy::runProgram()
             
             std::fill(e.begin(), e.end(), CHSV(hue,
                                                random8(min_sat, max_sat),
-                                               getBrightness()));
+                                               brightness));
          }
          else
          {
