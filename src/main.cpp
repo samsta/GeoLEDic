@@ -4,6 +4,7 @@
 #include "FastLED.h"
 #include "GeoLEDic.hpp"
 #include "Controls.hpp"
+#include "Watchdog_t4.h"
 
 #define FRAME_RATE 24
 static const unsigned FRAME_INTERVAL_MS = 1000 / FRAME_RATE;
@@ -49,6 +50,8 @@ static const uint8_t pinlist[NUM_STRIPS] = {
 
 OctoWS2811 octo_ws(LEDS_PER_STRIP, dma_mem, leds, WS2811_GRB | WS2813_800kHz, NUM_STRIPS, pinlist);
 
+WDT_T4<WDT1> wdt;
+
 void setup() {
 #ifdef USB_MIDI_SERIAL    
     Serial.begin(115200); 
@@ -58,10 +61,15 @@ void setup() {
 
     octo_ws.begin();
     octo_ws.registerForceBlank(Controls::getForceBlank());
+
+    WDT_timings_t config;
+    config.timeout = 5; /* in seconds, 0->128 */
+    wdt.begin(config);
 }
 
 void loop()
 {
+    wdt.feed();
     uint32_t time_before = millis();
     digitalWrite(LOADMON_PIN, HIGH);
     loopGeoLEDic();

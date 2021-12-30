@@ -7,3 +7,6 @@
 [submodule "lib/OctoWS2811"]
 	path = lib/OctoWS2811
 	url = https://github.com/samsta/OctoWS2811.git
+[submodule "lib/WDT_T4"]
+	path = lib/WDT_T4
+	url = https://github.com/samsta/WDT_T4.git
