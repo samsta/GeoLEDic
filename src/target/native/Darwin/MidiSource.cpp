@@ -82,6 +82,16 @@ public:
          if (excludePort(description.str())) continue;
 
          m_endpoints[dev] = description.str();
+
+         // re-connect wanted endpoint if the one that we were previously on
+         //  has disappeared and now reappeared
+         if (m_selected_endpoint == 0 and
+             m_wanted_endpoint == description.str())
+         {
+            connectEndpoint(dev);
+            m_selected_endpoint = dev;
+         }
+
       }
       
       // remove the ones that were no longer present
@@ -130,6 +140,7 @@ public:
    virtual void selectPort(PortId selected_port)
    {
       pthread_mutex_lock(&m_endpoints_mutex);
+
       if (selected_port != m_selected_endpoint)
       {
          disconnectEndpoint(m_selected_endpoint);
@@ -146,6 +157,16 @@ public:
       {
          selected_port = 0;
       }
+
+      if (selected_port == 0)
+      {
+         m_wanted_endpoint.clear();
+      }
+      else
+      {
+         m_wanted_endpoint = m_endpoints[selected_port];
+      }
+
       m_selected_endpoint = selected_port;
       pthread_mutex_unlock(&m_endpoints_mutex);
    }
@@ -154,6 +175,7 @@ protected:
    pthread_mutex_t   m_endpoints_mutex;
    std::map<MIDIEndpointRef, std::string> m_endpoints;
    MIDIEndpointRef   m_selected_endpoint;
+   std::string       m_wanted_endpoint;
    std::vector<std::string> m_port_blacklist;
 };
 
@@ -165,8 +187,9 @@ public:
    {
       // exclude confusing ports
       m_port_blacklist.push_back("Teensy MIDI");
-      m_port_blacklist.push_back("Komplete Kontrol DAW");
-      m_port_blacklist.push_back("DAW Out");
+      m_port_blacklist.push_back("LPProMK3 DIN");
+      m_port_blacklist.push_back("DAW");
+      m_port_blacklist.push_back(MIDI_OUT_PORT_NAME);
    }
    
    virtual int getNumEndpoints()
@@ -218,8 +241,8 @@ public:
       m_midi_controller_list(ctrl)
    {
       // exclude confusing ports
-      m_port_blacklist.push_back("Komplete Kontrol DAW");
-      m_port_blacklist.push_back("DAW In");
+      m_port_blacklist.push_back("DAW");
+      m_port_blacklist.push_back("LPProMK3 DIN");
       m_port_blacklist.push_back(MIDI_PORT_NAME);
    }
    

@@ -7,6 +7,9 @@ bool Controls::m_force_blank = false;
 Controls::Controls()
 {
    std::fill_n(m_control_values, sizeof(m_control_values), 0);
+   // it turns out that it's too easy to end up with force blank turned on,
+   //  so let's unforce it on prgram change
+   m_force_blank = false;
 }
 
 void Controls::controlChange(uint8_t cc_num, uint8_t value)
