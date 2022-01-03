@@ -6,12 +6,11 @@
 #include "ProgramFactory.hpp"
 #include "Piano.hpp"
 
-class MidiMenu: public gfx::Config::MenuPresenter, public MidiNoteObserver, public MidiSource::MidiPortConnectionCallback
+class MidiMenu: public gfx::Config::MenuPresenter, public MidiNoteObserver
 {
 public:
    MidiMenu(MidiSource& midi_source, ProgramFactory& program_factory);
-   ~MidiMenu();
-
+   
    virtual void drawMenu();
    virtual void noteOn(uint8_t note, uint8_t velocity, uint8_t channel);
    virtual void noteOff(uint8_t note, uint8_t channel);
@@ -20,7 +19,6 @@ private:
    typedef std::map<MidiSource::MidiPorts::PortId, std::string> MidiPortMap;
    
    void showMidiPorts(MidiSource::MidiPorts& ports, MidiPortMap& map);
-   virtual void onConnectionEstablished(MidiSource::MidiPorts::PortId port);
 
    MidiSource& m_midi_source;
    ProgramFactory& m_factory;
@@ -30,8 +28,6 @@ private:
    MidiPortMap m_midi_controllers;
 
    Piano m_piano;
-
-   bool m_snapshot_needed;
 };
 
 #endif /* MidiMenu_hpp */

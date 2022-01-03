@@ -32,35 +32,12 @@ public:
    const MidiMessage* read();
    
 #ifdef WITH_GFX
-   class MidiPortConnectionCallback;
-
    class MidiPorts {
    public:
       typedef int PortId;
-      MidiPorts(): m_connection_callback(nullptr){}
       virtual ~MidiPorts(){};
       virtual void updateAvailablePorts(std::map<PortId, std::string>& port_map, PortId& selected_port) = 0;
       virtual void selectPort(PortId selected_port) = 0;
-      void registerConnectionCallback(MidiPortConnectionCallback& cb)
-      {
-         m_connection_callback = &cb;
-      }
-      void unregisterConnectionCallback(MidiPortConnectionCallback& cb)
-      {
-         if (&cb == m_connection_callback)
-         {
-            m_connection_callback = nullptr;
-         }
-      }
-   protected:
-      MidiPortConnectionCallback* m_connection_callback;
-   };
-
-   class MidiPortConnectionCallback
-   {
-   public:
-      virtual ~MidiPortConnectionCallback(){}
-      virtual void onConnectionEstablished(MidiPorts::PortId port) = 0;
    };
 
    class MidiSender

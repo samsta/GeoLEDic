@@ -4,21 +4,8 @@
 
 MidiMenu::MidiMenu(MidiSource& midi_source, ProgramFactory& program_factory):
    m_midi_source(midi_source),
-   m_factory(program_factory),
-   m_snapshot_needed(false)
+   m_factory(program_factory)
 {
-   if (m_midi_source.getMidiOutPorts())
-   {
-      m_midi_source.getMidiOutPorts()->registerConnectionCallback(*this);
-   }
-}
-
-MidiMenu::~MidiMenu()
-{
-   if (m_midi_source.getMidiOutPorts())
-   {
-      m_midi_source.getMidiOutPorts()->unregisterConnectionCallback(*this);
-   }
 }
 
 void MidiMenu::drawMenu()
@@ -85,13 +72,6 @@ void MidiMenu::drawMenu()
       }
       ImGui::EndDisabled();
    }
-
-   if (m_snapshot_needed)
-   {
-      // send snapshot to update controller state upon connection
-      m_factory.program().sendSnapshot(m_midi_source.getSender());
-      m_snapshot_needed = false;
-   }
 }
 
 void MidiMenu::showMidiPorts(MidiSource::MidiPorts& ports, MidiPortMap& port_map)
@@ -118,12 +98,12 @@ void MidiMenu::showMidiPorts(MidiSource::MidiPorts& ports, MidiPortMap& port_map
    if (selected_port != initial_selected_port)
    {
       ports.selectPort(selected_port);
+      if (selected_port != 0)
+      {
+         // send snapshot to update controller state upon connection
+         m_factory.program().sendSnapshot(m_midi_source.getSender());
+      }
    }
-}
-
-void MidiMenu::onConnectionEstablished(MidiSource::MidiPorts::PortId port)
-{
-   m_snapshot_needed = true;
 }
 
 void MidiMenu::noteOn(uint8_t note, uint8_t velocity, uint8_t channel)

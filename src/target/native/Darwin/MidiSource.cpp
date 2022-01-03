@@ -264,12 +264,8 @@ public:
    
    virtual bool connectEndpoint(MIDIEndpointRef endpoint)
    {
-      if (m_connection_callback)
-      {
-         m_connection_callback->onConnectionEstablished(endpoint);
-      }
-
       // no need to connect to output
+      (void)endpoint;
       return true;
    }
 
