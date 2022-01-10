@@ -391,7 +391,7 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     m_top_row(),
     m_right_col(),
     m_pages(),
-    m_current_page(),
+    m_current_page(m_pages.end()),
     m_current_page_ix(),
     m_force_blank(false)
 {
@@ -511,13 +511,17 @@ void LaunchPad::sendColors()
         }
     }
 
-    for (unsigned row = 0; row < NUM_ROWS; row++)
+    if (m_current_page != m_pages.end())
     {
-        for (unsigned col = 0; col < NUM_COLS; col++)
+        for (unsigned row = 0; row < NUM_ROWS; row++)
         {
-            if (not addPadColor(p, m_current_page->m_pads[col][row], col, row)) break;
+            for (unsigned col = 0; col < NUM_COLS; col++)
+            {
+                if (not addPadColor(p, m_current_page->m_pads[col][row], col, row)) break;
+            }
         }
     }
+
     if (p == m_sysex_message.raw.data) return; // no messages added
 
     *p++ = SYSEX_END;
