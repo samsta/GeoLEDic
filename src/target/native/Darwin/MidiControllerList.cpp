@@ -1,5 +1,6 @@
 #include "MidiControllerList.hpp"
 #include "LaunchPad.hpp"
+#include "GeoLEDic.hpp"
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -169,6 +170,12 @@ void MidiControllerList::selectPort(PortId selected_port)
    if (not connect(selected_port))
    {
       selected_port = 0;
+   }
+   else
+   {
+      // we need a snapshot for the controller to update
+      // TODO: I really need to get rid of these singletons
+      getProgramFactory().program().sendSnapshot(getMidiSource().getSender());
    }
    m_selected_device = selected_port;
    pthread_mutex_unlock(&m_device_mutex);
