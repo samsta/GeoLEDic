@@ -6,7 +6,6 @@
 #include "Controls.hpp"
 #include "Watchdog_t4.h"
 
-#define FRAME_RATE 24
 static const unsigned FRAME_INTERVAL_MS = 1000 / FRAME_RATE;
 
 static const int LOADMON_PIN = 34;

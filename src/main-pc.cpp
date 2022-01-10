@@ -35,7 +35,7 @@ int main()
                triangles,
                gfx::Config()
                   .views(views)
-                  .framesPerSecond(30)
+                  .framesPerSecond(FRAME_RATE)
                   .strafingSpeed(2)
                   .cutoffDistance(0.6)
                   .attenuationConstant(0.4)
