@@ -26,6 +26,7 @@ public:
 template <unsigned cols, unsigned rows>
 struct Page {
     PadColor m_pads[cols][rows];
+    PadColor m_bottom_row[cols];
     void setDirty();
 };
 
@@ -91,6 +92,7 @@ private:
     std::map<uint8_t, std::shared_ptr<MidiButton> > m_dynamic_buttons_by_cc;
 
     std::map<unsigned, std::shared_ptr<Button> > m_top_row_buttons;
+    std::map<unsigned, std::shared_ptr<Button> > m_bottom_row_buttons;
     std::map<unsigned, std::shared_ptr<Button> > m_right_col_buttons;
     std::map<unsigned, std::shared_ptr<Button> > m_left_col_buttons;
 

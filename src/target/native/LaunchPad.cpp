@@ -82,21 +82,23 @@ public:
           uint8_t max,
           CRGB color,
           PadColor* pads,
+          PadColor* takeover_button,
           MidiMessageSink& to_geoledic):
         m_cc_num(cc_num),
         m_min(min),
         m_max(max),
         m_color(color),
         m_pads(pads),
+        m_takeover_button_pad(takeover_button),
         m_to_geoledic(to_geoledic),
-        m_value(0)
+        m_value(0),
+        m_takeover_active(false)
     {
-        (void)min;
-        (void)max;
     }
 
     ~Fader()
     {
+        deactivateTakeOver();
         for (unsigned k = 0; k < NUM_PADS; k++)
         {
             m_pads[k] = CRGB::Black;
@@ -139,6 +141,13 @@ public:
 
     void pushPad(uint8_t row, FaderMode mode)
     {
+        if (row > NUM_PADS)
+        {
+            // the first bottom row on the launchpad pro mk3
+            deactivateTakeOver();
+            return;
+        }
+
         switch (mode)
         {
         default:
@@ -192,7 +201,25 @@ public:
             break;
         }
 
+        activateTakeOver();
+
         m_to_geoledic.sink(MidiMessage::makeCC(m_cc_num, m_value));
+    }
+
+    void activateTakeOver()
+    {
+        if (m_takeover_active) return;
+        if (m_takeover_button_pad) *m_takeover_button_pad = m_color;
+        getMidiSource().setCcFilter(m_cc_num);
+        m_takeover_active = true;
+    }
+
+    void deactivateTakeOver()
+    {
+        if (not m_takeover_active) return;
+        if (m_takeover_button_pad) *m_takeover_button_pad = CRGB::Black;
+        getMidiSource().clearCcFilter(m_cc_num);
+        m_takeover_active = false;
     }
 
 private:
@@ -202,8 +229,10 @@ private:
     const unsigned NUM_PADS = 8;
     CRGB m_color;
     PadColor* m_pads;
+    PadColor* m_takeover_button_pad;
     MidiMessageSink& m_to_geoledic;
     uint8_t m_value;
+    bool    m_takeover_active;
 };
 
 class Button
@@ -381,6 +410,10 @@ void Page<LaunchPad::NUM_COLS, LaunchPad::NUM_ROWS>::setDirty()
             pad.m_dirty = true;
         }
     }
+    for (PadColor& pad: m_bottom_row)
+    {
+        pad.m_dirty = true;
+    }
 }
 
 LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic, Model model):
@@ -520,6 +553,13 @@ void LaunchPad::sendColors()
                 if (not addPadColor(p, m_current_page->m_pads[col][row], col, row)) break;
             }
         }
+        if (m_model == PRO_MK3)
+        {
+            for (unsigned col = 0; col < NUM_COLS; col++)
+            {
+                if (not addPadColor(p, m_current_page->m_bottom_row[col], col, NUM_ROWS + 1)) break;
+            }
+        }
     }
 
     if (p == m_sysex_message.raw.data) return; // no messages added
@@ -611,7 +651,8 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
                 p.min, 
                 p.max, 
                 CHSV(index*24, 255, 255), 
-                this_page->m_pads[index % NUM_COLS], 
+                this_page->m_pads[index % NUM_COLS],
+                &this_page->m_bottom_row[index % NUM_COLS],
                 m_to_geoledic);
             m_faders.push_back(m_faders_by_cc[p.cc_num]);
         }
@@ -679,7 +720,7 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
             }
         }
         else if (col < NUM_COLS and 
-                 row < NUM_ROWS)
+                 (row < NUM_ROWS or row == NUM_ROWS+1))
         {
             // only care about note on
             if (msg.data[2] == 0) return;

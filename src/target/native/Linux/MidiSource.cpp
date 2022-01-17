@@ -203,3 +203,15 @@ MidiSource::MidiPorts*  MidiSource::getMidiControllers()
 {
    return nullptr; // not implemented
 }
+
+void MidiSource::setCcFilter(uint8_t cc_num)
+{
+   // not implemented
+   (void)cc_num;
+}
+
+void MidiSource::clearCcFilter(uint8_t cc_num)
+{
+   // not implemented
+   (void)cc_num;
+}

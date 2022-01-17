@@ -78,6 +78,9 @@ public:
    MidiPorts* getMidiOutPorts();
    MidiSender* getSender();
    MidiPorts* getMidiControllers();
+
+   void setCcFilter(uint8_t cc_num);
+   void clearCcFilter(uint8_t cc_num);
 #endif
    
 private:

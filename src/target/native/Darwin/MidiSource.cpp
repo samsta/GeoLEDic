@@ -332,6 +332,15 @@ public:
       send(packet_list, TO_PORT_AND_VIRTUAL);
    }
 
+   void send(const MidiMessage& msg, DestinationType dest_type)
+   {
+      uint8_t buf[64];
+      MIDIPacketList* packet_list = reinterpret_cast<MIDIPacketList*>(buf);
+      MIDIPacket     *pkt = MIDIPacketListInit(packet_list);
+      MIDIPacketListAdd(packet_list, sizeof(buf), pkt, 0, msg.length, msg.data);
+      send(packet_list, dest_type);
+   }
+
    void send(const MIDIPacketList* packet_list, DestinationType dest_type)
    {
       if (m_midi_controller_list) m_midi_controller_list->updateController(packet_list);
@@ -389,6 +398,57 @@ public:
       m_controllers.refreshPorts();
    }
    
+   // we might need to filter incoming messages because e.g. we've taken control of them
+   //  on the controller (LaunchPad etc). Unfortunately, that means disassembling and reassembling
+   //  the packet list
+   void filterMidiPackets(const MIDIPacketList *packets)
+   {
+      if (m_cc_filter.empty())
+      {
+         // nothing to filter, thankfully!
+         processMidiPackets(packets);
+         return;
+      }
+
+      unsigned buf_size = 512;
+      uint8_t buf[buf_size];
+      MIDIPacketList* filtered_packets = reinterpret_cast<MIDIPacketList*>(buf);
+      MIDIPacket* pkt = MIDIPacketListInit(filtered_packets);
+      
+      const MIDIPacket *packet = static_cast<const MIDIPacket *>(packets->packet);
+
+      for (unsigned int i = 0; i < packets->numPackets; ++i)
+      {
+         int remaining_length = packet->length;
+         const uint8_t* p = packet->data;
+         while (remaining_length > 0)
+         {
+            int length = MidiMessage::lengthForStatusByte(*p);
+            
+            if (length < 0) break; // skip remainder of message
+            if (length > remaining_length) break;
+
+            if ((p[0] >> 4) == MidiMessage::CONTROL_CHANGE and m_cc_filter.count(p[1]))
+            {
+               // skip message
+            }
+            else
+            {
+               pkt = MIDIPacketListAdd(filtered_packets, buf_size, pkt, 0, length, p);
+            }
+            
+            p += length;
+            remaining_length -= length;
+            buf_size -= length;
+         }
+         packet = MIDIPacketNext(packet);
+      }
+      if (filtered_packets->numPackets)
+      {
+         processMidiPackets(filtered_packets);
+      }
+   }
+
    void processMidiPackets(const MIDIPacketList *packets)
    {
       const MIDIPacket *packet = static_cast<const MIDIPacket *>(packets->packet);
@@ -407,13 +467,14 @@ public:
             int length = MidiMessage::lengthForStatusByte(*p);
             
             if (length < 0) break; // skip remainder of message
-            if (length > remaining_length) break; 
+            if (length > remaining_length) break;
 
             MidiMessage msg;
             msg.length = length;
             std::copy_n(p, length, msg.data);
             p += length;
             remaining_length -= length;
+
             pthread_mutex_lock(&m_mutex);
             m_packets.push(msg);
             pthread_mutex_unlock(&m_mutex);
@@ -435,7 +496,7 @@ public:
    static void processMidi(const MIDIPacketList *packets,
                            void *ref_con, void *data)
    {
-      if (ref_con != nullptr) static_cast<Impl*>(ref_con)->processMidiPackets(packets);
+      if (ref_con != nullptr) static_cast<Impl*>(ref_con)->filterMidiPackets(packets);
    }
    
    void processMidiNotification(const MIDINotification *message)
@@ -469,6 +530,16 @@ public:
       return &m_last_returned_message;
    }
    
+   void setCcFilter(uint8_t cc_num)
+   {
+      m_cc_filter.insert(cc_num);
+   }
+
+   void clearCcFilter(uint8_t cc_num)
+   {
+      m_cc_filter.erase(cc_num);
+   }
+
    MIDIClientRef   m_midi_client;
    MIDIEndpointRef m_midi_in;
 
@@ -479,6 +550,8 @@ public:
    std::queue<MidiMessage> m_packets;
    pthread_mutex_t   m_mutex;
    MidiMessage       m_last_returned_message;
+
+   std::set<uint8_t> m_cc_filter;
 };
 
 MidiSource::MidiSource():
@@ -514,4 +587,14 @@ MidiSource::MidiSender*  MidiSource::getSender()
 MidiSource::MidiPorts* MidiSource::getMidiControllers()
 {
    return &m_i.m_controllers;
+}
+
+void MidiSource::setCcFilter(uint8_t cc_num)
+{
+   m_i.setCcFilter(cc_num);
+}
+
+void MidiSource::clearCcFilter(uint8_t cc_num)
+{
+   m_i.clearCcFilter(cc_num);
 }
