@@ -387,16 +387,40 @@ union LaunchPad::SysexMsg
 
 PadColor::PadColor():
     m_dirty(true),
-    m_color(CRGB::Black)
+    m_color(CRGB::Black),
+    m_type(RGB)
 {
+}
+
+PadColor::PadColor(const CRGB& color):
+    m_dirty(true),
+    m_color(color),
+    m_type(RGB)
+{
+}
+
+PadColor::PadColor(PaletteColor pulsing_color):
+    m_dirty(true),
+    m_type(PULSING)
+{
+    m_pal_color[0] = pulsing_color;
+}
+
+PadColor::PadColor(PaletteColor color1, PaletteColor color2):
+    m_dirty(true),
+    m_type(FLASHING)
+{
+    m_pal_color[0] = color1;
+    m_pal_color[1] = color2;
 }
 
 void PadColor::operator=(const CRGB& color)
 {
-    if (m_color != color)
+    if (m_color != color or m_type != RGB)
     {
         m_dirty = true;
         m_color = color;
+        m_type = RGB;
     }
 }
   
@@ -511,11 +535,24 @@ bool LaunchPad::addPadColor(uint8_t*& p, PadColor& pad, int col, int row)
 
     if (not pad.m_dirty) return true;
 
-    *p++ = 0x3; // use RGB
+    *p++ = pad.m_type; // use RGB
     *p++ = (row + 1) * 10 + col + 1;
-    *p++ = pad.m_color.r/2;
-    *p++ = pad.m_color.g/2;
-    *p++ = pad.m_color.b/2;
+    switch (pad.m_type)
+    {
+    case PadColor::FLASHING:
+        *p++ = pad.m_pal_color[0];
+        *p++ = pad.m_pal_color[1];
+        break;
+    case PadColor::PULSING:
+        *p++ = pad.m_pal_color[0];
+        break;
+    case PadColor::RGB:
+    default:
+        *p++ = pad.m_color.r/2;
+        *p++ = pad.m_color.g/2;
+        *p++ = pad.m_color.b/2;
+        break;
+    }
 
     pad.m_dirty = false;
     return true;
@@ -561,6 +598,8 @@ void LaunchPad::sendColors()
             }
         }
     }
+
+    addPadColor(p, m_logo, 8, 8);
 
     if (p == m_sysex_message.raw.data) return; // no messages added
 
@@ -687,6 +726,18 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
             m_prev_page_button->setState(Button::DISABLED);
             m_next_page_button->setState(Button::DISABLED);
         }
+    }
+    else if (msg.type() == MidiMessage::COMMON_AND_RT)
+    {
+        if (msg.subType() == MidiMessage::START or msg.subType() == MidiMessage::CONTINUE)
+        {
+            m_logo = PadColor(PadColor::RED, PadColor::BLACK);
+        }
+        else if (msg.subType() == MidiMessage::STOP)
+        {
+            m_logo = CRGB::Black;
+        }
+        m_to_launchpad.sink(msg);
     }
 }
 

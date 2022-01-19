@@ -13,7 +13,21 @@ std::ostream& operator<<(std::ostream& os, const MidiMessage& mm)
       case MidiMessage::PROGRAM_CHANGE: os << "PROGRAM_CHANGE "; break;
       case MidiMessage::CHANNEL_PRESSURE: os << "CHANNEL_PRESSURE "; break;
       case MidiMessage::PITCH_WHEEL: os << "PITCH_WHEEL "; break;
-      default: os << "unknown "; break;
+      case MidiMessage::COMMON_AND_RT:
+         switch (mm.subType())
+         {
+            case MidiMessage::SONG_POSITION_POINTER: 
+               os << "SONG_POSITION_POINTER ";
+               os << +mm.data[1] << " " << +mm.data[2];
+               return os;
+            case MidiMessage::TIMING_CLOCK: os << "TIMING_CLOCK"; return os;
+            case MidiMessage::START: os << "START"; return os;
+            case MidiMessage::CONTINUE: os << "CONTINUE"; return os;
+            case MidiMessage::STOP: os << "STOP"; return os;
+            default: os << "unknown system common/rt " << int(mm.subType()); return os;
+         }
+         break;
+      default: os << "unknown " << int(mm.type()); return os;
    }
    os << "ch" << mm.channel() << " ";
    unsigned k = 1;
@@ -39,6 +53,20 @@ int MidiMessage::lengthForStatusByte(uint8_t first_byte)
       case PROGRAM_CHANGE:
       case CHANNEL_PRESSURE:
          return 2;
+      case COMMON_AND_RT:
+         switch (first_byte & 0xF)
+         {
+            case SONG_POSITION_POINTER:
+               return 3;
+            case TIMING_CLOCK:
+            case START:
+            case CONTINUE:
+            case STOP:
+               return 1;
+            default:
+               // discard remainder, SYSEX etc not handled
+               return -1;
+         }
       default:
          // discard remainder, SYSEX etc not handled
          return -1;

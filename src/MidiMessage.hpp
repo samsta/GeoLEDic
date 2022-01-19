@@ -15,12 +15,23 @@ struct MidiMessage
       CONTROL_CHANGE   = 0xB,
       PROGRAM_CHANGE   = 0xC,
       CHANNEL_PRESSURE = 0xD,
-      PITCH_WHEEL      = 0xE
+      PITCH_WHEEL      = 0xE,
+      COMMON_AND_RT    = 0xF
    };
    
+   enum SubType {
+      SONG_POSITION_POINTER = 0x2,
+      TIMING_CLOCK          = 0x8,
+      START                 = 0xA,
+      CONTINUE              = 0xB,
+      STOP                  = 0xC
+   };
+
    Type type() const { return Type(data[0] >> 4); }
    unsigned channel() const { return data[0] & 0xF; }
-   
+   // only applicable for Type COMMON_AND_RT
+   SubType subType() const { return SubType(data[0] & 0xF); }
+
    uint16_t length;
    uint8_t  data[4];
 

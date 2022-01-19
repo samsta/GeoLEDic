@@ -16,11 +16,33 @@ class MidiButton;
 
 struct PadColor
 {
-public:
+    enum Type {
+        FLASHING = 1,
+        PULSING = 2,
+        RGB = 3
+    };
+
+    enum PaletteColor {
+        // indexed colors, see e.g. https://fael-downloads-prod.focusrite.com/customer/prod/s3fs-public/downloads/LPP3_prog_ref_guide_200415.pdf, page 9
+        BLACK = 0,
+        RED = 5,
+        ORANGE = 9,
+        YELLOW = 13,
+        GREEN = 21,
+        BLUE = 45,
+        PINK = 57
+    };
+
     PadColor();
+    PadColor(const CRGB& color);
+    PadColor(PaletteColor pulsing_color);
+    PadColor(PaletteColor color1, PaletteColor color2);
+
     void operator=(const CRGB& color);
     bool m_dirty;
-    CRGB m_color;    
+    CRGB m_color;
+    PaletteColor m_pal_color[2];
+    Type m_type;
 };
 
 template <unsigned cols, unsigned rows>
@@ -76,6 +98,7 @@ private:
     PadColor m_top_row[NUM_COLS];
     PadColor m_right_col[NUM_ROWS];
     PadColor m_left_col[NUM_ROWS];
+    PadColor m_logo;
 
     std::list<Page<NUM_ROWS, NUM_COLS> > m_pages;
     std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
