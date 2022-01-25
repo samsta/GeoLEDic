@@ -26,6 +26,7 @@ add_library(programs STATIC
             ${CMAKE_CURRENT_SOURCE_DIR}/BetterEdgy.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Edgy.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Fire.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/FlexibleNoise.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/MovingRainbow.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Lightning.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Noise.cpp

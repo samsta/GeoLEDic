@@ -1,15 +1,30 @@
 from string import Template
 
 def fader_cc(num):
-    return 16 + num
+    assert num < 32, "can only do 32 faders, currently"
+    if num < 16:
+        return 16 + num
+    else:
+        return 48 + num
 
 def button_cc(num):
     # gotta skip 32 as it's used for 'bank select', and
     # Ableton Live doesn't record it
+    assert num < 15, "can only do 15 buttons, currently"
     return 33 + num
 
 def enum_cc(num):
+    assert num < 16, "can only do 16 enums, currently"
     return 48 + num
+
+
+def colorFader(color_param_name, fader_num, color_num, default_value=0):
+    return {
+        'name': '%s %d' % (color_param_name, color_num),
+        'number': fader_cc(fader_num),
+        'description': '%s of color %d' % (color_param_name, color_num),
+        'default': default_value
+    }
 
 keyzones = {
    'ShapesFromNotes': 
@@ -656,7 +671,95 @@ programs = [
               'number': button_cc(1)
           },
        ]
-    }
+    },
+    {
+      'program': 'FlexibleNoise',
+      'name': 'Flexible Noise',
+      'base': 'DecayingShapesFromNotes',
+      'keyzones': keyzones['ShapesFromNotes'],
+      'controls': [
+         {
+            'name': 'Speed X',
+            'number': fader_cc(0),
+            'description': 'Speed of the movement along the X axis of the noise field'
+         },
+         {
+            'name': 'Scale X',
+            'number': fader_cc(1),
+            'default': 50,
+            'description': 'Size of the steps along the X axis of the noise field'
+         },
+         {
+            'name': 'Speed Y',
+            'number': fader_cc(2),
+            'description': 'Speed of the movement along the Y axis of the noise field'
+         },
+         {
+            'name': 'Scale Y',
+            'number': fader_cc(3),
+            'default': 50,
+            'description': 'Size of the steps along the Y axis of the noise field'
+         },
+         {
+            'name': 'Speed T',
+            'number': fader_cc(4),
+            'default': 12,
+            'description': 'Speed of the movement along the time axis of the noise field'
+         },
+         {
+            'name': 'Rotation Speed',
+            'number': fader_cc(5),
+            'description': 'Speed at which the entire program rotates',
+            'max': 63
+         },
+         {
+             'name': 'Keys Decay',
+             'number': fader_cc(6),
+             'default': 3,
+             'description': 'Rate at which keyboard triggered shapes decay'
+         },
+
+         colorFader("Hue",  8, 0),
+         colorFader("Hue",  9, 1),
+         colorFader("Hue", 10, 2),
+         colorFader("Hue", 11, 3, 100),
+         colorFader("Hue", 12, 4),
+         colorFader("Hue", 13, 5),
+         colorFader("Hue", 14, 6),
+         colorFader("Hue", 15, 7),
+
+         colorFader("Saturation", 16, 0),
+         colorFader("Saturation", 17, 1),
+         colorFader("Saturation", 18, 2),
+         colorFader("Saturation", 19, 3, 127),
+         colorFader("Saturation", 20, 4),
+         colorFader("Saturation", 21, 5),
+         colorFader("Saturation", 22, 6),
+         colorFader("Saturation", 23, 7),
+
+         colorFader("Brightness", 24, 0),
+         colorFader("Brightness", 25, 1),
+         colorFader("Brightness", 26, 2),
+         colorFader("Brightness", 27, 3, 127),
+         colorFader("Brightness", 28, 4),
+         colorFader("Brightness", 29, 5),
+         colorFader("Brightness", 30, 6),
+         colorFader("Brightness", 31, 7),
+
+         {
+             'name': 'Black Stripes',
+             'number': button_cc(0),
+             'type': 'toggle',
+             'description': 'If set, the 8 colours are separated by black stripes'
+         },
+         {
+             'name': 'X/Y Swapped',
+             'number': button_cc(1),
+             'type': 'toggle',
+             'description': 'X and Y axis of the noise field mapping are swapped. Hard to explain, just try it! Mandala-like patterns can be achieved with this'
+         }
+      ]
+    },
 ]
 
 
