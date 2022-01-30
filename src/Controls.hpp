@@ -10,9 +10,8 @@ public:
    enum SpecialControllers {
       BRIGHTNESS_CC = 7,
       FORCE_BLANK_CC = 80,
-      RECORD_CC = 81,
-      STOP_CC = 82,
-      PROGRAM_CHANGE_CC = 119
+      RECORD_CC = 117,
+      STOP_CC = 118,
    };
 
    Controls();

@@ -32,14 +32,21 @@ void loopGeoLEDic()
                note_observer->noteOff(msg->data[1], msg->channel());
             }
             break;
+         case MidiMessage::CHANNEL_PRESSURE:
+            // Ableton Live does not deal well with program changes, so we've encoded them as channel pressure.
+            // Offset by 1 to make it a little less confusing
+            factory.changeProgram(msg->data[1] - 1);
+            break;
          case MidiMessage::PROGRAM_CHANGE:
             factory.changeProgram(msg->data[1]);
             break;
          case MidiMessage::CONTROL_CHANGE:
-            if (msg->data[1] == Controls::PROGRAM_CHANGE_CC)
+            // deleteme April 2022
+            if (msg->data[1] == 119)
             {
                // Ableton Live does not deal well with program changes, so we've encoded them as control changes.
                // Offset by 1 to make it a little less confusing
+               // NOTE: This is only for backwards compatibility, delete after April 2022. We're now doing this using channel pressure
                factory.changeProgram(msg->data[2] - 1);
             }
             else

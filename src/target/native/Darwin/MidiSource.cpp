@@ -231,7 +231,8 @@ class MidiOutputPort: public MidiPort, public MidiSource::MidiSender
 {
 public:
    enum DestinationType{
-      TO_PORT_AND_VIRTUAL, 
+      TO_PORT_AND_VIRTUAL,
+      TO_VIRTUAL_ONLY,
       TO_PORT_ONLY // use e.g. to prevent stuff received on virtual in to be sent to virtual out
    };
 
@@ -326,10 +327,27 @@ public:
       uint8_t buf[64];
       MIDIPacketList* packet_list = reinterpret_cast<MIDIPacketList*>(buf);
       MIDIPacket     *pkt = MIDIPacketListInit(packet_list);
-      uint8_t message[] = {MidiMessage::PROGRAM_CHANGE << 4, program};
-      MIDIPacketListAdd(packet_list, sizeof(buf), pkt, 0, sizeof(message), message);
-      
+      {
+         uint8_t message[] = {MidiMessage::PROGRAM_CHANGE << 4, program};
+         MIDIPacketListAdd(packet_list, sizeof(buf), pkt, 0, sizeof(message), message);
+      }
       send(packet_list, TO_PORT_AND_VIRTUAL);
+
+      /// HACK HACK HACK
+      /*
+       * Because Ableton does not record program changes (booooh!) nor does it allow you to have program changes in
+       * the middle of clips, we abuse channel pressure for that purpose. In the UI, program changes are represented
+       * as 1-128, but channel pressure is 0-127, so let's add 1 for consistent representation in the UI.
+       * I chose channel pressure because Live reorders the control changes by ascending cc number, and channel pressure
+       * comes first, and we want our 'fake' program changes to be issued first
+       */
+      pkt = MIDIPacketListInit(packet_list);
+      {
+         program += 1;
+         uint8_t message[] = {MidiMessage::CHANNEL_PRESSURE << 4, program};
+         MIDIPacketListAdd(packet_list, sizeof(buf), pkt, 0, sizeof(message), message);
+      }      
+      send(packet_list, TO_VIRTUAL_ONLY);
    }
 
    void send(const MidiMessage& msg, DestinationType dest_type)
@@ -347,14 +365,18 @@ public:
 
       if (not m_enabled) return;
 
-      if (m_selected_endpoint)
+      switch (dest_type)
       {
-         MIDISend(m_port, m_selected_endpoint, packet_list);
-      }
-
-      if (dest_type == TO_PORT_AND_VIRTUAL)
-      {
-         MIDIReceived(m_virtual_midi_out, packet_list);
+         case TO_PORT_AND_VIRTUAL:
+            if (m_selected_endpoint) MIDISend(m_port, m_selected_endpoint, packet_list);
+            MIDIReceived(m_virtual_midi_out, packet_list);
+            break;
+         case TO_PORT_ONLY:
+            if (m_selected_endpoint) MIDISend(m_port, m_selected_endpoint, packet_list);
+            break;
+         case TO_VIRTUAL_ONLY:
+            MIDIReceived(m_virtual_midi_out, packet_list);
+            break;
       }
    }
 
