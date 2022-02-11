@@ -28,8 +28,14 @@ ProgramFactory::ProgramFactory(const DomeWrapper& dome, const Strips& strips):
 #endif
 }
 
-void ProgramFactory::changeProgram(uint8_t program)
+void ProgramFactory::changeProgram(uint8_t program, Policy policy)
 {
+   if (policy == ONLY_ON_CHANGE and
+       program == m_program_number)
+   {
+       return;
+   }
+   
    // give other threads a way to prevent the program instance
    //  they're currently using from getting destroyed
    lock();

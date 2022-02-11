@@ -16,7 +16,13 @@ class ProgramFactory
 public:
    ProgramFactory(const DomeWrapper& dome, const Strips& strips);
    ~ProgramFactory();
-   void changeProgram(uint8_t program);
+
+   enum Policy {
+      ALWAYS,        // reload program even if it's the same program
+      ONLY_ON_CHANGE // reload program only if it's a different program 
+   };
+
+   void changeProgram(uint8_t program, Policy policy = ALWAYS);
    Program& program();
 
    void lock();

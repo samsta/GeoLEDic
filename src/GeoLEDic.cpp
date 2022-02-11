@@ -34,8 +34,13 @@ void loopGeoLEDic()
             break;
          case MidiMessage::CHANNEL_PRESSURE:
             // Ableton Live does not deal well with program changes, so we've encoded them as channel pressure.
-            // Offset by 1 to make it a little less confusing
-            factory.changeProgram(msg->data[1] - 1);
+            // Offset by 1 to make it a little less confusing, and ignore 0 to avoid falling back to diagnostic mode.
+            // Also, we ignore program changes if they are for the same program as ableton sends multiple of them when
+            // you move the play head since it sees views it as a controller
+            if (msg->data[1] > 0)
+            {
+               factory.changeProgram(msg->data[1] - 1, ProgramFactory::ONLY_ON_CHANGE);
+            }
             break;
          case MidiMessage::PROGRAM_CHANGE:
             factory.changeProgram(msg->data[1]);
