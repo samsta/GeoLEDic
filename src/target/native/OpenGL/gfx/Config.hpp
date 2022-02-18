@@ -27,6 +27,15 @@ public:
       float fov_deg, horizontal_angle_deg, vertical_angle_deg;
    };
    
+   struct Label3D 
+   {
+      float x;
+      float y;
+      float z;
+      std::string line1;
+      std::string line2;
+   };
+
    class KeyboardHandler
    {
    public:
@@ -52,7 +61,8 @@ public:
       m_strafing_speed(20),
       m_views(1, View(0, 8, 5)),
       m_keyboard_handler(&m_null_handler),
-      m_menu_presenter()
+      m_menu_presenter(),
+      m_identify_triangles(false)
    {
    }
    
@@ -96,6 +106,25 @@ public:
       return *this;
    }
    MenuPresenter* menu() const { return m_menu_presenter; }
+
+   Config& labels3D(const std::vector<Label3D>& labels)
+   {
+      m_labels = &labels;
+      return *this;
+   }
+   const std::vector<Label3D>& labels3D() const
+   {
+      if (m_labels)
+      {
+         return *m_labels; 
+      }
+      static std::vector<Label3D> dummy;
+      return dummy;
+   }
+   bool& identifyTriangles()
+   {
+      return m_identify_triangles;
+   }
    
 private:
    
@@ -114,8 +143,10 @@ private:
    float m_attenuation_square;
    float m_strafing_speed;
    std::vector<View> m_views;
+   const std::vector<Label3D>* m_labels;
    KeyboardHandler* m_keyboard_handler;
    MenuPresenter* m_menu_presenter;
+   bool m_identify_triangles;
 };
 
 }

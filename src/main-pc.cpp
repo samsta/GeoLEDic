@@ -4,6 +4,7 @@
 #include "Serial.hpp"
 #include "MidiMenu.hpp"
 #include "Controls.hpp"
+#include "Piano.hpp"
 #include <iostream>
 
 
@@ -11,6 +12,7 @@ int main()
 {
    std::vector<gfx::LED> leds;
    std::vector<gfx::Triangle> triangles;
+   std::vector<gfx::Config::Label3D> labels;
 
    std::vector<gfx::Config::View> views =
      {
@@ -28,6 +30,12 @@ int main()
       for (const Triangle& t: dome)
       {
          t.createLeds(leds, triangles, i);
+         labels.push_back({
+            t.centroid().x,
+            t.centroid().y,
+            t.centroid().z,
+            std::to_string(i),
+            numberToNoteName(i)});
          i++;
       }
       gfx::Gfx gfx(
@@ -42,6 +50,7 @@ int main()
                   .attenuationLinear(130.0)
                   .attenuationSquare(900.0)
                   .keyboardHandler(&Serial)
+                  .labels3D(labels)
                   .menu(&midi_menu));
       
       gfx.registerForceBlank(Controls::getForceBlank());

@@ -30,6 +30,7 @@ Triangle::Triangle(
       m_led_corners(),
 #ifdef WITH_GFX
       m_triangle_corners(),
+      m_centroid((Vector(vertices[0]) + Vector(vertices[1]) + Vector(vertices[2]))/3.0),
 #endif
       m_first_corner_led(edges[0].firstLedOnEdge()),
       m_first_led(INT_MAX),
@@ -158,4 +159,10 @@ void Triangle::createLeds(std::vector<gfx::LED>& leds, std::vector<gfx::Triangle
    triangles.push_back(outer_triangle);
    triangles.push_back(led_triangle);
 }
+
+const Vertex& Triangle::centroid() const 
+{
+   return m_centroid;
+}
+
 #endif

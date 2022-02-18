@@ -132,6 +132,7 @@ public:
       GLint led_color;
       GLint led_pos;
       GLint num_leds;
+      GLint draw_outline;
    } m_uniforms;
 
 };
@@ -141,7 +142,7 @@ Gfx::Impl::Impl(std::vector<LED>& leds, std::vector<Triangle>& triangles, const 
    m_triangles(triangles),
    m_config(config),
    m_window(m_config),
-   m_menu(m_config, m_window.get()),
+   m_menu(m_config, m_window),
    m_led_position_data(m_leds.size()),
    m_led_color_data(m_leds.size()),
    m_frame_time(1.0/m_config.framesPerSecond())
@@ -221,6 +222,7 @@ void Gfx::Impl::extractUniformLocations()
    m_uniforms.led_color = getUniformLocation(m_program_id, "led_color");
    m_uniforms.led_pos = getUniformLocation(m_program_id, "led_pos");
    m_uniforms.num_leds = getUniformLocation(m_program_id, "num_leds");
+   m_uniforms.draw_outline = getUniformLocation(m_program_id, "draw_outline");
 }
 
 bool Gfx::Impl::draw()
@@ -254,6 +256,7 @@ bool Gfx::Impl::draw()
    glUniform1f(m_uniforms.attenuation_linear, m_config.attenuationLinear());
    glUniform1f(m_uniforms.attenuation_square, m_config.attenuationSquare());
    
+   glUniform1i(m_uniforms.draw_outline, m_config.identifyTriangles());
 
    for (unsigned k = 0; k < m_triangles.size(); k++)
    {

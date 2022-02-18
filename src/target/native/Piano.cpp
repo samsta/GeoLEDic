@@ -31,7 +31,6 @@ unsigned getKeyX(int key, int width)
     return x + offsets[key % 12] * width;
 }
 
-
 const char* noteName(int key)
 {
     static char name[16];
@@ -40,6 +39,11 @@ const char* noteName(int key)
     return name;
 }
 
+}
+
+std::string numberToNoteName(uint8_t num)
+{
+    return noteName(num);
 }
 
 KeyZone::KeyZone(uint8_t from, uint8_t to, uint32_t color, const char* name):

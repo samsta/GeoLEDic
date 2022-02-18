@@ -24,6 +24,7 @@ public:
    
 #ifdef WITH_GFX
    void createLeds(std::vector<gfx::LED>& leds, std::vector<gfx::Triangle>& triangles, int triangle_num) const;
+   const Vertex& centroid() const;
 #endif
    
    // begin() starts on first corner (bottom left by convention), the iterator then goes clockwise to end()
@@ -47,6 +48,7 @@ private:
    Vertex m_led_corners[3];
 #ifdef WITH_GFX
    Vertex m_triangle_corners[3];
+   Vertex m_centroid;
 #endif
    unsigned m_first_corner_led;
    unsigned m_first_led;

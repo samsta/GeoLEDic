@@ -5,6 +5,7 @@
 #include "MidiSource.hpp"
 #include <vector>
 #include <map>
+#include <string>
 
 class Program;
 
@@ -17,6 +18,8 @@ struct KeyZone
     ImColor col;
     const char* name;
 };
+
+std::string numberToNoteName(uint8_t num);
 
 class Piano {
 public:

@@ -33,7 +33,7 @@ keyzones = {
         {
             'name': 'Triangles',
             'from': 0,
-            'to': 123,
+            'to': 122,
             'color': 'Orange'
         }
       ],
