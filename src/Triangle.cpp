@@ -30,8 +30,8 @@ Triangle::Triangle(
       m_led_corners(),
 #ifdef WITH_GFX
       m_triangle_corners(),
-      m_centroid((Vector(vertices[0]) + Vector(vertices[1]) + Vector(vertices[2]))/3.0),
 #endif
+      m_centroid((Vector(vertices[0]) + Vector(vertices[1]) + Vector(vertices[2]))/3.0),
       m_first_corner_led(edges[0].firstLedOnEdge()),
       m_first_led(INT_MAX),
       m_last_led(0),
@@ -116,7 +116,10 @@ const Vertex& Triangle::corner(unsigned corner_ix) const
    return m_led_corners[corner_ix % 3];
 }
 
-
+const Vertex& Triangle::centroid() const 
+{
+   return m_centroid;
+}
 
 #ifdef WITH_GFX
 void Triangle::createLeds(std::vector<gfx::LED>& leds, std::vector<gfx::Triangle>& triangles, int triangle_num) const
@@ -158,11 +161,6 @@ void Triangle::createLeds(std::vector<gfx::LED>& leds, std::vector<gfx::Triangle
    led_triangle.vertices[0].num_leds = leds.size() - led_triangle.vertices[0].start_led_ix;
    triangles.push_back(outer_triangle);
    triangles.push_back(led_triangle);
-}
-
-const Vertex& Triangle::centroid() const 
-{
-   return m_centroid;
 }
 
 #endif
