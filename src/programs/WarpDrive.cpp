@@ -4,7 +4,8 @@
 
 WarpDrive::WarpDrive(const DomeWrapper& dome):
    m_dome(dome),
-   m_rings()
+   m_rings(),
+   m_current_phi(0)
 {
    std::fill_n(m_rings, sizeof(m_rings)/sizeof(*m_rings), CRGB::Black);
 }   
@@ -78,13 +79,18 @@ void WarpDrive::runProgram()
 
    float theta = M_PI_2 * getCenterTheta() / 127;
    float phi   = M_PI * (getCenterPhi() - 64) / 64;
-
    float scaler = 147 - getRadius();
-
+   
+   if (isSmoothenPhi()) {
+      m_current_phi = m_current_phi + (phi - m_current_phi)/10;
+   } else {
+      m_current_phi = phi;
+   }
+   
    Vertex warp_center(
-     -6.0 * sin(phi) * cos(theta),
+     -6.0 * sin(m_current_phi) * cos(theta),
       6.0 * sin(theta),
-     -6.0 * cos(phi) * cos(theta)
+     -6.0 * cos(m_current_phi) * cos(theta)
    );
 
    for (unsigned t_ix = 0; t_ix < m_dome.size(); t_ix++)

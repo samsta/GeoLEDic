@@ -851,6 +851,13 @@ programs = [
               'default': True,
               'number': button_cc(1)
           },
+          {
+              'name': 'Smoothen Phi',
+              'description': 'Smoothen changes in phi to make them less jerky. Turn this off if you want instantaneous phi changes.',
+              'type': 'toggle',
+              'default': True,
+              'number': button_cc(2)
+          },
        ]
     }
 ]

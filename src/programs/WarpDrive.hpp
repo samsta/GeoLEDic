@@ -18,6 +18,7 @@ private:
    const DomeWrapper& m_dome;
    static const unsigned NUM_DISTANCE_STEPS = 256;
    CRGB m_rings[NUM_DISTANCE_STEPS];
+   float m_current_phi;
 };
 
 #endif /* WarpDrive_hpp */
