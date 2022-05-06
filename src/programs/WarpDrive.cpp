@@ -90,27 +90,36 @@ void WarpDrive::runProgram()
    for (unsigned t_ix = 0; t_ix < m_dome.size(); t_ix++)
    {
       Triangle& t(m_dome[t_ix]);
-
+      float dist[3] = {
+         distance(t.corner(0), warp_center),
+         distance(t.corner(1), warp_center),
+         distance(t.corner(2), warp_center)
+      };
+      
       for (unsigned e_ix = 0; e_ix < 3; e_ix++)
       {
          const Edge& e(t.edge(e_ix));
-         const Vertex& c0(t.corner(e_ix));
-         const Vertex& c1(t.corner((e_ix+1) % 3));
+         float d0(dist[e_ix]);
+         float d1(dist[(e_ix+1) % 3]);
 
          if (isSkipConcentric())
          {
-            // skip concentric edges
-            if (abs(distance(c0, warp_center) - distance(c1, warp_center)) < 0.2)
+            // skip concentric edges, i.e. edges whose ends
+            // have the same distance from the warp center (with a bit of tolerance)
+            if (abs(d0 - d1) < 0.1)
             {
                std::fill(e.begin(), e.end(), CRGB::Black);
                continue;
             }
          }
 
+         d0 *= scaler;
+         d1 *= scaler;
+         
          int led_ix = 0;
          for (CRGB& led: e)
          {
-            unsigned d = unsigned(distance(warp_center, interpolate(c0, c1, led_ix, e.size())) * scaler);
+            unsigned d = unsigned(d0 + led_ix * (d1 - d0) / e.size());
             if (d >= sizeof(m_rings)/sizeof(*m_rings))
             {
                led = CRGB::Black;
