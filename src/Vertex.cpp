@@ -82,6 +82,22 @@ uint16_t interpolatePhi(const Vertex& from, const Vertex& to, int step, int num_
    return phi;
 }
 
+Vertex interpolate(const Vertex& from, const Vertex& to, int step, int num_steps)
+{
+   Vector d = to - from;
+   return from + (d * step) / num_steps;
+}
+
+float distance_square(const Vertex& a, const Vertex& b)
+{
+   Vector d = a - b;
+   return d.x*d.x + d.y*d.y + d.z*d.z;
+}
+
+float distance(const Vertex& a, const Vertex& b)
+{
+   return sqrt(distance_square(a, b));
+}
 
 #ifdef WITH_GFX
 Vertex::operator gfx::LED() const

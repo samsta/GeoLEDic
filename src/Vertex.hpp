@@ -43,6 +43,9 @@ struct Vertex {
 
 uint8_t interpolateTheta(const Vertex& from, const Vertex& to, int step, int num_steps);
 uint16_t interpolatePhi(const Vertex& from, const Vertex& to, int step, int num_steps);
+Vertex interpolate(const Vertex& from, const Vertex& to, int step, int num_steps);
 
+float distance_square(const Vertex& a, const Vertex& b);
+float distance(const Vertex& a, const Vertex& b);
 
 #endif

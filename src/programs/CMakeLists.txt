@@ -31,6 +31,7 @@ add_library(programs STATIC
             ${CMAKE_CURRENT_SOURCE_DIR}/Lightning.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Noise.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/OrganicLine.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/WarpDrive.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/WarpDriveMandala.cpp
             ${GENERATED_BASE_CLASS_SOURCES}
             ${GENERATED_FACTORY})

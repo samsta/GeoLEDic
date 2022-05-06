@@ -760,6 +760,99 @@ programs = [
          }
       ]
     },
+    {
+       'program': 'WarpDrive',
+       'name': 'Warp Drive',
+       'base': 'Notes',
+        'keyzones' : [
+            [ # channel 0
+                {
+                    'name': 'Rings',
+                    'from': 36,
+                    'to': 59,
+                    'channel': 0,
+                    'transpose': 0
+                }
+            ]
+        ],
+       'controls': [
+          {
+             'name': 'Spawn Rate',
+             'description': 'Rate at which rings appear',
+             'number': fader_cc(0),
+             'default': 30
+          },
+          {
+              'name': 'Speed',
+              'description': 'Speed at which rings move',
+              'number': fader_cc(1),
+              'default': 1,
+              'max': 30
+          },
+          {
+              'name': 'Thickness',
+              'description': 'Thickness of rings',
+              'number': fader_cc(2),
+              'default': 0,
+              'max': 30
+          },
+          {
+             'name': 'Hue',
+             'number': fader_cc(3),
+             'default': 64,
+             'description': 'Center hue value used for the randomised colors'
+          },
+          {
+             'name': 'Hue Range',
+             'number': fader_cc(4),
+             'default': 127,
+             'description': 'Amount by which the hue deviates randomly'
+          },
+          {
+             'name': 'Saturation',
+             'number': fader_cc(5),
+             'default': 64,
+             'description': 'Center saturation used for the randomised colors'
+          },
+          {
+             'name': 'Saturation Range',
+             'number': fader_cc(6),
+             'default': 127,
+             'description': 'Amount by which the saturation deviates randomly'
+          },
+          {
+             'name': 'Center Theta',
+             'number': fader_cc(7),
+             'default': 38,
+             'description': 'Warp center angle from ground upwards. Ground is 0, up top is 127'
+          },
+          {
+             'name': 'Center Phi',
+             'number': fader_cc(8),
+             'default': 64,
+             'description': 'Warp center angle, center is 64, right is > 64, left is < 64'
+          },
+          {
+             'name': 'Radius',
+             'number': fader_cc(9),
+             'default': 127,
+             'description': 'Radius of the warp circle'
+          },
+          {
+              'name': 'Reverse',
+              'description': 'Move backwards',
+              'type': 'toggle',
+              'number': button_cc(0)
+          },
+          {
+              'name': 'Skip Concentric',
+              'description': 'Skip concentric edges for a less flickering animation',
+              'type': 'toggle',
+              'default': True,
+              'number': button_cc(1)
+          },
+       ]
+    }
 ]
 
 
