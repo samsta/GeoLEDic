@@ -43,6 +43,7 @@ add_library(geoledic-core STATIC ${GEOLEDIC_CORE_SOURCES})
 set(GEOLEDIC_SOURCES ${TARGET_SOURCES}
                      src/Dome.cpp
                      src/GeoLEDic.cpp
+                     src/ProgramFactory.cpp
                      src/main-pc.cpp)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${GEOLEDIC_SOURCES})

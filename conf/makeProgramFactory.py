@@ -18,102 +18,23 @@ FACTORY_TEMPLATE = '''
 
 $includes
 
-ProgramFactory::ProgramFactory(const DomeWrapper& dome, const Strips& strips):
-      m_dome(dome),
-      m_strips(strips),
-      m_current_program(nullptr)
+void ProgramFactory::doChangeProgram(uint8_t program)
 {
-#ifdef WITH_GFX
-    pthread_mutex_init(&m_program_mutex, nullptr);
-#endif
-}
-
-void ProgramFactory::changeProgram(uint8_t program, Policy policy)
-{
-   if (policy == ONLY_ON_CHANGE and
-       program == m_program_number)
-   {
-       return;
-   }
-   
-   // give other threads a way to prevent the program instance
-   //  they're currently using from getting destroyed
-   lock();
-   delete m_current_program;
-   unlock();
-   // clear all LEDs
-   m_strips.clear();
    switch (program)
    {
 $cases
    default:
       m_current_program = new Diagnostic(m_dome, m_strips);
    }
-   m_program_number = program;
-}
-
-Program& ProgramFactory::program()
-{
-   // create default on first access
-   if (m_current_program == nullptr)
-   {
-       changeProgram(0);
-   }
-   return *m_current_program;
-}
-
-void ProgramFactory::lock()
-{
-#ifdef WITH_GFX
-    pthread_mutex_lock(&m_program_mutex);
-#endif
-}
-
-void ProgramFactory::unlock()
-{
-#ifdef WITH_GFX
-    pthread_mutex_unlock(&m_program_mutex);
-#endif
 }
 
 #ifdef WITH_GFX
-void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
-{
-    const char* program_names[] = {
-        $names
-    };
-    const char* combo_preview_value = "Diagnostic";
-    if (m_program_number < IM_ARRAYSIZE(program_names))
-    {
-        combo_preview_value = program_names[m_program_number];
-    }
-    
-    if (ImGui::BeginCombo("Program", combo_preview_value, ImGuiComboFlags_HeightLarge))
-    {
-        for (int n = 0; n < IM_ARRAYSIZE(program_names); n++)
-        {
-            const bool is_selected = (m_program_number == n);
-            if (ImGui::Selectable(program_names[n], is_selected))
-            {
-               changeProgram(n);
-               if (sender) m_current_program->sendSnapshot(sender);
-            }
-            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-    ImGui::Separator();
-    
-    program().drawMenu(sender, piano);
-}
-#endif
+const char* ProgramFactory::PROGRAM_NAMES[] = {
+    $names
+};
 
-ProgramFactory::~ProgramFactory()
-{
-   delete m_current_program;
-}
+const unsigned ProgramFactory::NUM_PROGRAMS($num_programs);
+#endif
 
 '''
 
@@ -144,4 +65,5 @@ with open(filename, 'w') as file:
         scriptname=sys.argv[0],
         includes=includes,
         names='"' + '",\n        "'.join(names) + '"',
+        num_programs=len(names),
         cases=cases))
