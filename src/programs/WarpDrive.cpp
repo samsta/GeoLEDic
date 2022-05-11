@@ -1,6 +1,7 @@
 #include "WarpDrive.hpp"
 #include "colorutils.h"
 #include "Palettes.hpp"
+#include <math.h>
 
 WarpDrive::WarpDrive(const DomeWrapper& dome):
    m_dome(dome),

@@ -77,7 +77,7 @@ def getImplementations(program):
         snapshots = snapshots + "    sender->sendControlChange(%u, m_control_values[%u]);\n" % (cc['number'], cc['number'])
         implementations.append(impl)
     # add constructor with defaults at beginning
-    implementations.insert(0, "%s::%s(): m_activate_popup_selection(false)\n{\n%s}" % (program['program'], program['program'], defaults))
+    implementations.insert(0, "%s::%s()\n{\n%s}" % (program['program'], program['program'], defaults))
     return implementations, snapshots
 
 IMGUI_SLIDER_TEMPLATE = '''
@@ -378,7 +378,7 @@ private:
     uint8_t m_popup_needs_closing;
     uint8_t m_selected_popup_item;
     uint8_t m_selected_popup_num_items;
-    bool m_activate_popup_selection;
+    bool m_activate_popup_selection = false;
 #endif
 };
 
