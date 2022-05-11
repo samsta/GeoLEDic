@@ -726,7 +726,7 @@ void LaunchPad::handleProgramButton(uint8_t value)
 {
     // only care about note on
     if (value == 0) return;
-    if (m_shift_button->is(Button::ACTIVE)) {
+    if (m_program_button->is(Button::ACTIVE) and not m_shift_button->is(Button::ACTIVE)) {
         getProgramFactory().activatePopupSelection(getMidiSource().getSender());
         m_program_button->setState(Button::INACTIVE);
     } else {
@@ -737,11 +737,12 @@ void LaunchPad::handleProgramButton(uint8_t value)
 
 void LaunchPad::toggleEnumPopup(uint8_t cc_num)
 {
-    if (m_shift_button->is(Button::ACTIVE)) {
+    auto enum_button = m_dynamic_buttons_by_cc[cc_num];
+    if (enum_button->is(Button::ACTIVE) and not m_shift_button->is(Button::ACTIVE)) {
         getProgramFactory().activatePopupSelection(getMidiSource().getSender());
-        m_program_button->setState(Button::INACTIVE);
+        enum_button->setState(Button::INACTIVE);
     } else {
-        m_dynamic_buttons_by_cc[cc_num]->setState(getProgramFactory().toggleEnumPopup(cc_num) ?
+        enum_button->setState(getProgramFactory().toggleEnumPopup(cc_num) ?
             Button::ACTIVE : Button::INACTIVE);
     }
 }
