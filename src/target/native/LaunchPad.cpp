@@ -4,6 +4,7 @@
 #include "GeoLEDic.hpp" // yuck!
 #include <algorithm>
 #include <iostream>
+#include <functional>
 
 namespace {
 const uint8_t HEADER_LENGTH = 6;
@@ -41,7 +42,8 @@ namespace LpPro {
     enum TopRowFunctions
     {
         PREV_PAGE = 0,
-        NEXT_PAGE = 1
+        NEXT_PAGE = 1,
+        PROGRAM = 7
     };
 
     enum LeftColumnFunctions
@@ -63,6 +65,8 @@ const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
 const CRGB COLOR_FADER_FINE_BTN(CRGB::LightBlue);
 const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
 const CRGB COLOR_SEND_SNAPSHOT_BTN(CRGB::Green);
+const CRGB COLOR_PROGRAM_BTN(CRGB::Plum);
+const CRGB COLOR_SHIFT_BTN(CRGB::White);
 
 const CRGB dim(const CRGB& c, uint8_t brightness = 50)
 {
@@ -321,6 +325,25 @@ private:
     HandlerFunction m_handler;
 };
 
+class ButtonWithFunction: public Button
+{
+public:
+
+    ButtonWithFunction(PadColor& pad, const CRGB& color, std::function<void(uint8_t)> function):
+        Button(pad, color),
+        m_function(function)
+    {}
+
+    virtual void receive(uint8_t value)
+    {
+        m_function(value);
+    }
+
+private:
+    std::function<void(uint8_t)> m_function;
+};
+
+
 class MidiButton: public Button
 {
 public:
@@ -336,6 +359,29 @@ public:
 protected:
     const uint8_t m_cc_num;
     MidiMessageSink& m_to_geoledic;
+};
+
+class MidiButtonWithFunction: public MidiButton
+{
+public:
+
+    MidiButtonWithFunction(PadColor& pad, const CRGB& color, uint8_t cc_num, MidiMessageSink& to_geoledic, std::function<void(uint8_t)> function):
+        MidiButton(pad, color, cc_num, to_geoledic),
+        m_function(function)
+    {
+    }
+
+    virtual void receiveFromGeoledic(uint8_t value) {
+
+    }
+
+    virtual void receive(uint8_t value)
+    {
+        m_function(value);
+    }
+
+private:
+    std::function<void(uint8_t)> m_function;
 };
 
 class MidiToggleButton: public MidiButton
@@ -473,15 +519,21 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
     }
     else
     {
-        m_fader_up_button   = std::make_shared<Button>(m_left_col[LpPro::FADER_UP], COLOR_FADER_FINE_BTN);
-        m_fader_down_button = std::make_shared<Button>(m_left_col[LpPro::FADER_DOWN], COLOR_FADER_FINE_BTN);
+        m_fader_up_button   = std::make_shared<ButtonWithHandler<LaunchPad> >(m_left_col[LpPro::FADER_UP], COLOR_FADER_FINE_BTN, *this, &LaunchPad::handleUpButton);
+        m_fader_down_button = std::make_shared<ButtonWithHandler<LaunchPad> >(m_left_col[LpPro::FADER_DOWN], COLOR_FADER_FINE_BTN, *this, &LaunchPad::handleDownButton);
         m_left_col_buttons[LpPro::FADER_UP]   = m_fader_up_button;
         m_left_col_buttons[LpPro::FADER_DOWN] = m_fader_down_button;
 
         m_prev_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpPro::PREV_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handlePrevPageButton);
         m_next_page_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpPro::NEXT_PAGE], COLOR_PAGE_BTN, *this, &LaunchPad::handleNextPageButton);
-        m_top_row_buttons[LpPro::PREV_PAGE]  = m_prev_page_button;
-        m_top_row_buttons[LpPro::NEXT_PAGE]  = m_next_page_button;
+        m_program_button  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_top_row[LpPro::PROGRAM], COLOR_PROGRAM_BTN, *this, &LaunchPad::handleProgramButton);
+        m_program_button->setState(Button::INACTIVE);
+        m_top_row_buttons[LpPro::PREV_PAGE] = m_prev_page_button;
+        m_top_row_buttons[LpPro::NEXT_PAGE] = m_next_page_button;
+        m_top_row_buttons[LpPro::PROGRAM]   = m_program_button;
+
+        m_shift_button = std::make_shared<Button>(m_shift, COLOR_SHIFT_BTN);
+        m_shift_button->setState(Button::INACTIVE);
 
         m_static_buttons_by_cc[Controls::FORCE_BLANK_CC] = std::make_shared<MidiToggleButton>(m_left_col[LpPro::FORCE_BLANK], COLOR_FORCE_BLANK_BTN, Controls::FORCE_BLANK_CC, m_to_geoledic, &m_force_blank);
         m_left_col_buttons[LpPro::FORCE_BLANK] = m_static_buttons_by_cc[Controls::FORCE_BLANK_CC];
@@ -599,6 +651,9 @@ void LaunchPad::sendColors()
         }
     }
 
+    if (m_model == PRO_MK3) {
+        addPadColor(p, m_shift, -1, 8);
+    }
     addPadColor(p, m_logo, 8, 8);
 
     if (p == m_sysex_message.raw.data) return; // no messages added
@@ -640,8 +695,25 @@ void LaunchPad::handleNextPageButton(uint8_t value)
     }
 }
 
+void LaunchPad::handleUpButton(uint8_t value) {
+    m_fader_up_button->setState(value ? Button::ACTIVE : Button::INACTIVE);
+
+    if (value == 0) return;
+    getProgramFactory().selectPrevPopupItem();
+}
+
+void LaunchPad::handleDownButton(uint8_t value) {
+    m_fader_down_button->setState(value ? Button::ACTIVE : Button::INACTIVE);
+
+    if (value == 0) return;
+    getProgramFactory().selectNextPopupItem();
+}
+
+
 void LaunchPad::handleSendSnapshotButton(uint8_t value)
 {
+    // only care about note on
+    if (value == 0) return;
     // the LaunchPad runs in a separate thread, we don't
     //  want the program change to be actioned upon while
     //  we're still using the program, hence we lock it
@@ -649,6 +721,31 @@ void LaunchPad::handleSendSnapshotButton(uint8_t value)
     getProgramFactory().program().sendSnapshotWithTrigger(getMidiSource().getSender());
     getProgramFactory().unlock();
 }
+
+void LaunchPad::handleProgramButton(uint8_t value)
+{
+    // only care about note on
+    if (value == 0) return;
+    if (m_shift_button->is(Button::ACTIVE)) {
+        getProgramFactory().activatePopupSelection(getMidiSource().getSender());
+        m_program_button->setState(Button::INACTIVE);
+    } else {
+        m_program_button->setState(getProgramFactory().toggleProgramPopup() ?
+            Button::ACTIVE : Button::INACTIVE);
+    }
+}
+
+void LaunchPad::toggleEnumPopup(uint8_t cc_num)
+{
+    if (m_shift_button->is(Button::ACTIVE)) {
+        getProgramFactory().activatePopupSelection(getMidiSource().getSender());
+        m_program_button->setState(Button::INACTIVE);
+    } else {
+        m_dynamic_buttons_by_cc[cc_num]->setState(getProgramFactory().toggleEnumPopup(cc_num) ?
+            Button::ACTIVE : Button::INACTIVE);
+    }
+}
+
 
 void LaunchPad::updateFromMidi(const MidiMessage& msg)
 {
@@ -698,15 +795,23 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         m_current_page = m_pages.begin();
         m_current_page_ix = 0;
 
-        std::vector<uint8_t> buttons(getButtonsForProgram(program_num));
+        std::vector<ButtonParams> buttons(getButtonsForProgram(program_num));
         m_dynamic_buttons_by_cc.clear();
         for (unsigned i = 0; i < LpMini::DYNAMIC_BUTTON_FIRST - LpMini::DYNAMIC_BUTTON_LAST + 1; i++) // dynamic button numbering is backwards as we want them from top to bottom
         {
             uint8_t row = LpMini::DYNAMIC_BUTTON_FIRST - i;
             if (i < buttons.size())
             {
-                uint8_t cc_num = buttons[i];
-                m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiToggleButton>(m_right_col[row], CRGB::Orange, cc_num, m_to_geoledic);
+                uint8_t cc_num = buttons[i].cc_num;
+                if (buttons[i].type == ButtonParams::BUTTON) {
+                    m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiToggleButton>(m_right_col[row], CRGB::Orange, cc_num, m_to_geoledic);
+                } else {
+                    m_dynamic_buttons_by_cc[cc_num] = std::make_shared<MidiButtonWithFunction>(m_right_col[row], CRGB::Red, cc_num, m_to_geoledic,
+                                                                                               [this, cc_num](uint8_t val){ 
+                                                                                                   if (val > 0) toggleEnumPopup(cc_num);
+                                                                                               });
+                    m_dynamic_buttons_by_cc[cc_num]->setState(Button::INACTIVE);
+                }
                 m_right_col_buttons[row] = m_dynamic_buttons_by_cc[cc_num];
             }
             else
@@ -751,7 +856,11 @@ void LaunchPad::updateFromCtrl(const MidiMessage& msg)
 
         if (row == NUM_ROWS)
         {
-            if (m_top_row_buttons[col])
+            if (col == -1 && m_shift_button)
+            {
+                m_shift_button->receive(msg.data[2]);
+            }           
+            else if (m_top_row_buttons[col])
             {
                 m_top_row_buttons[col]->receive(msg.data[2]);
             }

@@ -18,7 +18,7 @@ std::vector<ControlChangeParams> getFadersForProgram(uint8_t program_num)
     }
 }
 
-std::vector<uint8_t> getButtonsForProgram(uint8_t program_num)
+std::vector<ButtonParams> getButtonsForProgram(uint8_t program_num)
 {
     switch (program_num)
     {
@@ -51,7 +51,9 @@ for program in programs.get():
         if cc['type'] == 'continuous':
             faders.append("{ %d, %d, %d}" % (cc['number'], cc['min'], cc['max']))
         elif cc['type'] == 'toggle':
-            buttons.append("%d" % cc['number'])
+            buttons.append("{%d, ButtonParams::BUTTON}" % cc['number'])
+        elif cc['type'] == 'enum':
+            buttons.append("{%d, ButtonParams::POPUP_TOGGLE}" % cc['number'])
 
     fader_cases += Template(CASE_TEMPLATE).substitute(
         num=program_number, 

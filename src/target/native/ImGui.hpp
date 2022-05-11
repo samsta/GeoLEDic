@@ -11,6 +11,9 @@ void HelpMarker(const char* message);
 
 bool VSliderU8WithText(const char* label, const char* description, const ImVec2& size, uint8_t* v, uint8_t v_min, uint8_t v_max, uint8_t hue);
 
+void OpenPopupByLabel(const char* label);
+
+
 }
 
 inline void HelpMarker(const char* message)

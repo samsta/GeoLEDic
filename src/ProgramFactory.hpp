@@ -30,6 +30,11 @@ public:
 
 #ifdef WITH_GFX
    void drawMenu(MidiSource::MidiSender* sender, Piano* piano);
+   bool toggleProgramPopup();
+   bool toggleEnumPopup(uint8_t cc_num);
+   void selectNextPopupItem();
+   void selectPrevPopupItem();
+   void activatePopupSelection(MidiSource::MidiSender* sender);
 private:
 
    pthread_mutex_t m_program_mutex;
@@ -38,6 +43,15 @@ private:
    static const unsigned NUM_PROGRAMS;
    static const char* PROGRAM_NAMES[];
    // end generated
+
+   enum PopupState{
+      OPEN_REQUESTED,
+      OPEN,
+      CLOSE_REQUESTED,
+      CLOSED
+   };
+   PopupState m_program_popup_state;
+   unsigned m_selected_popup_item;
 #endif
 
 private:

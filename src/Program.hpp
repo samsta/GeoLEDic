@@ -20,6 +20,11 @@ public:
    virtual void drawMenu(MidiSource::MidiSender*, Piano*){};
    virtual void sendSnapshot(MidiSource::MidiSender*){};
    virtual void sendSnapshotWithTrigger(MidiSource::MidiSender*){};
+   virtual bool toggleEnumPopup(uint8_t cc_num){return false;}
+   virtual void selectNextPopupItem(){};
+   virtual void selectPrevPopupItem(){};
+   virtual void activatePopupSelection(){};
+
 #endif
 };
 

@@ -41,6 +41,14 @@ def getEnums(program):
                 enum = enum + "\n    };"
         enums.append(enum)
     return enums
+
+def getEnumCcToNameMap(program):
+    ret = []
+    for cc in program['controls']:
+        if cc['type'] != 'enum':
+            continue
+        ret.append('{%d, "%s"}' % (cc['number'], cc['name']))
+    return ",".join(ret)
         
 def getImplementations(program):
     implementations = []
@@ -62,7 +70,6 @@ def getImplementations(program):
             impl = impl + "        return %s_%s;\n    }\n}" % (cc['enum_type'], cc['enums'][0])
             if 'default' in cc and cc['default']:
                 defaults = defaults + "    setControlValue(%u, %d); // default for %s\n" % (cc['number'], cc['values'][cc['enums'].index(cc['default'])] ,cc['name'])
-
         else:
             impl = impl + "    return %s;\n}" % getter
             if 'default' in cc:
@@ -70,7 +77,7 @@ def getImplementations(program):
         snapshots = snapshots + "    sender->sendControlChange(%u, m_control_values[%u]);\n" % (cc['number'], cc['number'])
         implementations.append(impl)
     # add constructor with defaults at beginning
-    implementations.insert(0, "%s::%s()\n{\n%s}" % (program['program'], program['program'], defaults))
+    implementations.insert(0, "%s::%s(): m_activate_popup_selection(false)\n{\n%s}" % (program['program'], program['program'], defaults))
     return implementations, snapshots
 
 IMGUI_SLIDER_TEMPLATE = '''
@@ -121,6 +128,9 @@ IMGUI_ENUM_TEMPLATE = '''
             for (int n = 0; n < IM_ARRAYSIZE(items); n++)
             {
                 const bool is_selected = (index == n);
+                if (m_popup_is_open == $cc_num && n == m_selected_popup_item) {
+                   ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+                }
                 if (ImGui::Selectable(items[n], is_selected))
                 {
                     index = n;
@@ -130,8 +140,29 @@ IMGUI_ENUM_TEMPLATE = '''
                 // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
                 if (is_selected)
                     ImGui::SetItemDefaultFocus();
+                if (m_popup_is_open == $cc_num && n == m_selected_popup_item) {
+                    ImGui::PopStyleColor();
+                    if (m_activate_popup_selection) {
+                        m_control_values[$cc_num] = values[m_selected_popup_item];
+                        if (sender) sender->sendControlChange($cc_num, m_control_values[$cc_num]);
+                        m_popup_needs_closing = $cc_num;
+                        m_activate_popup_selection = false;
+                    }
+                }
             }
             ImGui::EndCombo();
+        }
+
+        if (m_popup_needs_opening == $cc_num) {
+            ImGui::OpenPopupByLabel("$name");
+            m_popup_needs_opening = 0;
+            m_popup_is_open = $cc_num;
+            m_selected_popup_num_items = IM_ARRAYSIZE(items);
+            m_selected_popup_item = index;
+        } else if (m_popup_needs_closing == $cc_num) {
+            ImGui::ClosePopupsExceptModals();
+            m_popup_needs_closing = 0;
+            m_popup_is_open = 0;
         }
     }
 '''
@@ -202,6 +233,7 @@ CPP_TEMPLATE = '''
 #include "${classname}.hpp"
 #ifdef WITH_GFX
 #include "ImGui.hpp"
+#include "imgui/imgui_internal.h"
 #include "Piano.hpp"
 #include <unistd.h>
 
@@ -269,6 +301,44 @@ void ${classname}::sendSnapshot(MidiSource::MidiSender* sender)
 $control_snapshot
 }
 
+bool ${classname}::toggleEnumPopup(uint8_t cc_num)
+{
+    if (m_popup_is_open == cc_num) {
+        m_popup_needs_closing = cc_num;
+        return false;
+    } else {
+        m_popup_is_open = 0;
+        m_popup_needs_opening = cc_num;
+        return true;
+    }
+}
+
+void ${classname}::selectNextPopupItem()
+{
+    if (m_selected_popup_item + 1 < m_selected_popup_num_items) {
+        m_selected_popup_item++;
+    } else {
+        m_selected_popup_item = 0;
+    }
+}
+
+void ${classname}::selectPrevPopupItem()
+{
+    if (m_selected_popup_item != 0) {
+        m_selected_popup_item--;
+    } else {
+        m_selected_popup_item = m_selected_popup_num_items - 1;
+    }
+}
+
+void ${classname}::activatePopupSelection()
+{
+    if (m_popup_is_open) {
+        m_activate_popup_selection = true;
+    }
+}
+
+
 #endif
 
 }
@@ -297,6 +367,18 @@ public:
 #ifdef WITH_GFX
     virtual void drawMenu(MidiSource::MidiSender* sender, Piano* piano);
     virtual void sendSnapshot(MidiSource::MidiSender* sender);
+    virtual bool toggleEnumPopup(uint8_t cc_num);
+    virtual void selectNextPopupItem();
+    virtual void selectPrevPopupItem();
+    virtual void activatePopupSelection();
+
+private:
+    uint8_t m_popup_needs_opening;
+    uint8_t m_popup_is_open;
+    uint8_t m_popup_needs_closing;
+    uint8_t m_selected_popup_item;
+    uint8_t m_selected_popup_num_items;
+    bool m_activate_popup_selection;
 #endif
 };
 

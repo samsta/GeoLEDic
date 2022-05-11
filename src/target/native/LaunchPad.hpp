@@ -85,7 +85,13 @@ private:
 
     void handleNextPageButton(uint8_t value);
     void handlePrevPageButton(uint8_t value);
+    void handleUpButton(uint8_t value);
+    void handleDownButton(uint8_t value);
+
     void handleSendSnapshotButton(uint8_t value);
+    void handleProgramButton(uint8_t value);
+
+    void toggleEnumPopup(uint8_t cc_num);
 
     MidiMessageSink& m_to_launchpad;
     MidiMessageSink& m_to_geoledic;
@@ -99,6 +105,7 @@ private:
     PadColor m_right_col[NUM_ROWS];
     PadColor m_left_col[NUM_ROWS];
     PadColor m_logo;
+    PadColor m_shift;
 
     std::list<Page<NUM_ROWS, NUM_COLS> > m_pages;
     std::list<Page<NUM_ROWS, NUM_COLS> >::iterator m_current_page;
@@ -123,6 +130,9 @@ private:
     std::shared_ptr<Button> m_prev_page_button;
     std::shared_ptr<Button> m_fader_up_button;
     std::shared_ptr<Button> m_fader_down_button;
+    std::shared_ptr<Button> m_program_button;
+    std::shared_ptr<Button> m_shift_button;
+
 };
 
 #endif // LAUNCHPAD_HPP

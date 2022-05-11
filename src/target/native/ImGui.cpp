@@ -1,7 +1,7 @@
 #include "ImGui.hpp"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui/imgui_internal.h"
-
+#include <iostream>
 namespace ImGui {
 
 void HelpMarker(const char* desc)
@@ -127,6 +127,13 @@ bool VSliderU8WithText(const char* label, const char* help, const ImVec2& size, 
     return rv;
 }
 
-
+void OpenPopupByLabel(const char* label)
+{
+    std::cout << "crap" << std::endl;
+    ImGuiWindow* window = GetCurrentWindow();
+    const ImGuiID id = window->GetID(label);
+    const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
+    OpenPopup(popup_id, 0);
+}
 
 }

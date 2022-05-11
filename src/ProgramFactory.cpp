@@ -6,7 +6,9 @@
 #include "ProgramFactory.hpp"
 #include "programs/Diagnostic.hpp"
 #ifdef WITH_GFX
-#include "imgui/imgui.h"
+#include "ImGui.hpp"
+#include "imgui/imgui_internal.h"
+#include <iostream>
 #endif
 
 
@@ -16,6 +18,7 @@ ProgramFactory::ProgramFactory(const DomeWrapper& dome, const Strips& strips):
       m_current_program(nullptr)
 {
 #ifdef WITH_GFX
+    m_program_popup_state = CLOSED;
     pthread_mutex_init(&m_program_mutex, nullptr);
 #endif
 }
@@ -77,6 +80,9 @@ void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
         for (int n = 0; n < NUM_PROGRAMS; n++)
         {
             const bool is_selected = (m_program_number == n);
+            if (m_program_popup_state == OPEN && n == m_selected_popup_item) {
+               ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+            }
             if (ImGui::Selectable(PROGRAM_NAMES[n], is_selected))
             {
                changeProgram(n);
@@ -85,13 +91,98 @@ void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
             // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
             if (is_selected)
                 ImGui::SetItemDefaultFocus();
+            if (m_program_popup_state == OPEN && n == m_selected_popup_item) {
+               ImGui::PopStyleColor();
+            }
         }
         ImGui::EndCombo();
     }
     ImGui::Separator();
+
+   switch (m_program_popup_state)
+   {
+      case CLOSE_REQUESTED:
+         ImGui::ClosePopupsExceptModals();
+         m_program_popup_state = CLOSED;
+         break;
+      case OPEN_REQUESTED:
+      {
+         ImGui::OpenPopupByLabel("Program");
+         m_program_popup_state = OPEN;
+         break;
+      }
+      default:
+         break;
+   }
     
     program().drawMenu(sender, piano);
 }
+
+bool ProgramFactory::toggleProgramPopup()
+{
+   // need to remember action for next ImGui loop iteration
+   //  as we can't interact with it outside of the loop
+   switch (m_program_popup_state)
+   {
+      case OPEN:
+         m_program_popup_state = CLOSE_REQUESTED;
+         m_selected_popup_item = m_program_number;
+         return false;
+      case CLOSED:
+         m_program_popup_state = OPEN_REQUESTED;
+         return true;
+      default:
+         return false;
+   }
+}
+
+bool ProgramFactory::toggleEnumPopup(uint8_t cc_num)
+{
+   if (m_current_program == nullptr) return false;
+   return m_current_program->toggleEnumPopup(cc_num);
+}
+
+
+void ProgramFactory::selectNextPopupItem()
+{
+   if (m_program_popup_state == OPEN) {
+      if (m_selected_popup_item + 1 < NUM_PROGRAMS) {
+         m_selected_popup_item++;
+      } else {
+         m_selected_popup_item = 0;
+      }
+   } else if (m_current_program) {
+      m_current_program->selectNextPopupItem();
+   }
+}
+
+void ProgramFactory::selectPrevPopupItem()
+{
+   if (m_program_popup_state == OPEN) {
+      if (m_selected_popup_item != 0) {
+         m_selected_popup_item--;
+      } else {
+         m_selected_popup_item = NUM_PROGRAMS - 1;
+      }
+   } else if (m_current_program) {
+      m_current_program->selectPrevPopupItem();
+   }
+}
+
+void ProgramFactory::activatePopupSelection(MidiSource::MidiSender* sender)
+{
+   if (m_program_popup_state == OPEN)
+   {
+      changeProgram(m_selected_popup_item);
+      if (sender) m_current_program->sendSnapshot(sender);
+      ImGui::ClosePopupsExceptModals();
+      m_program_popup_state = CLOSED;
+   } else if (m_current_program) {
+      m_current_program->activatePopupSelection();
+   }
+}
+
+
 #endif
 
 ProgramFactory::~ProgramFactory()
