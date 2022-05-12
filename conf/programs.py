@@ -738,15 +738,6 @@ programs = [
          colorFader("Hue", 14, 6,   0, "hue"),
          colorFader("Hue", 15, 7,   0, "hue"),
 
-         colorFader("Saturation", 16, 0),
-         colorFader("Saturation", 17, 1),
-         colorFader("Saturation", 18, 2),
-         colorFader("Saturation", 19, 3, 127),
-         colorFader("Saturation", 20, 4),
-         colorFader("Saturation", 21, 5),
-         colorFader("Saturation", 22, 6),
-         colorFader("Saturation", 23, 7),
-
          colorFader("Brightness", 24, 0),
          colorFader("Brightness", 25, 1),
          colorFader("Brightness", 26, 2),
@@ -755,6 +746,15 @@ programs = [
          colorFader("Brightness", 29, 5),
          colorFader("Brightness", 30, 6),
          colorFader("Brightness", 31, 7),
+
+         colorFader("Saturation", 16, 0, 127),
+         colorFader("Saturation", 17, 1, 127),
+         colorFader("Saturation", 18, 2, 127),
+         colorFader("Saturation", 19, 3, 127),
+         colorFader("Saturation", 20, 4, 127),
+         colorFader("Saturation", 21, 5, 127),
+         colorFader("Saturation", 22, 6, 127),
+         colorFader("Saturation", 23, 7, 127),
 
          {
              'name': 'Black Stripes',
