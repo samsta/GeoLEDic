@@ -6,14 +6,21 @@
 
 struct ControlChangeParams 
 {
-    ControlChangeParams(uint8_t cc_num, uint8_t min, uint8_t max):
+    enum Style {
+        NORMAL,
+        HUE
+    };
+
+    ControlChangeParams(uint8_t cc_num, uint8_t min, uint8_t max, Style style = NORMAL):
         cc_num(cc_num),
         min(min),
-        max(max)
+        max(max),
+        style(style)
     {}
     uint8_t cc_num;
     uint8_t min;
     uint8_t max;
+    Style style;
 };
 
 struct ButtonParams

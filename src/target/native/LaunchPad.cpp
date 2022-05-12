@@ -100,7 +100,7 @@ public:
     {
     }
 
-    ~Fader()
+    virtual ~Fader()
     {
         deactivateTakeOver();
         for (unsigned k = 0; k < NUM_PADS; k++)
@@ -109,7 +109,7 @@ public:
         }
     }
 
-    void update(uint8_t value)
+    virtual void update(uint8_t value)
     {
         unsigned span      = m_max - m_min + 1;
         unsigned curr = m_min;
@@ -226,7 +226,7 @@ public:
         m_takeover_active = false;
     }
 
-private:
+protected:
     unsigned m_cc_num;
     unsigned m_min;
     unsigned m_max;
@@ -238,6 +238,44 @@ private:
     uint8_t m_value;
     bool    m_takeover_active;
 };
+
+
+class HueFader: public Fader
+{
+public:
+    HueFader(
+            uint8_t cc_num,
+            uint8_t min,
+            uint8_t max,
+            CRGB color,
+            PadColor* pads,
+            PadColor* takeover_button,
+            MidiMessageSink& to_geoledic):
+        Fader(cc_num, min, max, color, pads, takeover_button, to_geoledic)
+    {}
+
+    virtual void update(uint8_t value)
+    {
+        unsigned span      = m_max - m_min + 1;
+        unsigned curr = m_min;
+        for (unsigned k = 0; k < NUM_PADS; k++)
+        {
+            unsigned next = (k+1) * span / NUM_PADS + m_min;
+            if (next <= value or curr > value)
+            {
+                m_pads[k] = CHSV((256/NUM_PADS) * k + (256/(2*NUM_PADS)), 255, 100);
+            }
+            else
+            {
+                m_pads[k] = CHSV(value*2, 255, 255);
+            }
+
+            curr = next;
+        }
+        m_value = value;
+    }
+};
+
 
 class Button
 {
@@ -783,14 +821,29 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
                 this_page = &m_pages.back();
             }
 
-            m_faders_by_cc[p.cc_num] = std::make_shared<Fader>(
-                p.cc_num, 
-                p.min, 
-                p.max, 
-                CHSV(index*24, 255, 255), 
-                this_page->m_pads[index % NUM_COLS],
-                &this_page->m_bottom_row[index % NUM_COLS],
-                m_to_geoledic);
+            if (p.style == ControlChangeParams::NORMAL)
+            {
+                m_faders_by_cc[p.cc_num] = std::make_shared<Fader>(
+                    p.cc_num, 
+                    p.min, 
+                    p.max, 
+                    CHSV(index*24, 255, 255), 
+                    this_page->m_pads[index % NUM_COLS],
+                    &this_page->m_bottom_row[index % NUM_COLS],
+                    m_to_geoledic);
+            }
+            else
+            {
+                m_faders_by_cc[p.cc_num] = std::make_shared<HueFader>(
+                    p.cc_num, 
+                    p.min, 
+                    p.max, 
+                    CHSV(index*24, 255, 255), 
+                    this_page->m_pads[index % NUM_COLS],
+                    &this_page->m_bottom_row[index % NUM_COLS],
+                    m_to_geoledic);
+            }
+
             m_faders.push_back(m_faders_by_cc[p.cc_num]);
         }
         m_current_page = m_pages.begin();

@@ -49,7 +49,7 @@ for program in programs.get():
     buttons  = []
     for cc in program['controls']:
         if cc['type'] == 'continuous':
-            faders.append("{ %d, %d, %d}" % (cc['number'], cc['min'], cc['max']))
+            faders.append("{ %d, %d, %d, ControlChangeParams::%s}" % (cc['number'], cc['min'], cc['max'], cc['slider_style'].upper() if 'slider_style' in cc else 'NORMAL'))
         elif cc['type'] == 'toggle':
             buttons.append("{%d, ButtonParams::BUTTON}" % cc['number'])
         elif cc['type'] == 'enum':
