@@ -77,7 +77,7 @@ void ProgramFactory::drawMenu(MidiSource::MidiSender* sender, Piano* piano)
     
     if (ImGui::BeginCombo("Program", combo_preview_value, ImGuiComboFlags_HeightLarge))
     {
-        for (int n = 0; n < NUM_PROGRAMS; n++)
+        for (unsigned n = 0; n < NUM_PROGRAMS; n++)
         {
             const bool is_selected = (m_program_number == n);
             if (m_program_popup_state == OPEN && n == m_selected_popup_item) {
