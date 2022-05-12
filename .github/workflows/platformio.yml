@@ -33,5 +33,3 @@ jobs:
         pio platform install native
     - name: Run PlatformIO
       run: pio run -e teensy41
-    - name: Run native tests
-      run: pio test -e native
