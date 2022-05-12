@@ -18,12 +18,13 @@ def enum_cc(num):
     return 48 + num
 
 
-def colorFader(color_param_name, fader_num, color_num, default_value=0):
+def colorFader(color_param_name, fader_num, color_num, default_value=0, slider_style='normal'):
     return {
         'name': '%s %d' % (color_param_name, color_num),
         'number': fader_cc(fader_num),
         'description': '%s of color %d' % (color_param_name, color_num),
-        'default': default_value
+        'default': default_value,
+        'slider_style': slider_style
     }
 
 keyzones = {
@@ -425,22 +426,26 @@ programs = [
           {
              'name': 'Hue 0',
              'number': fader_cc(3),
-             'description': 'Hue of the first color. Only used if `Use Hues` is set'
+             'description': 'Hue of the first color. Only used if `Use Hues` is set',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue 1',
              'number': fader_cc(4),
-             'description': 'Hue of the second color. Only used if `Use Hues` is set'
+             'description': 'Hue of the second color. Only used if `Use Hues` is set',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue 2',
              'number': fader_cc(5),
-             'description': 'Hue of the third color. Only used if `Use Hues` is set'
+             'description': 'Hue of the third color. Only used if `Use Hues` is set',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue 3',
              'number': fader_cc(6),
-             'description': 'Hue of the fourth color. Only used if `Use Hues` is set'
+             'description': 'Hue of the fourth color. Only used if `Use Hues` is set',
+             'slider_style': 'hue'
           },
           {
              'name': 'Use Hues',
@@ -492,13 +497,15 @@ programs = [
              'name': 'Min Hue',
              'number': fader_cc(3),
              'default': 0,
-             'description': 'Minimal hue value used for the randomised colors'
+             'description': 'Minimal hue value used for the randomised colors',
+             'slider_style': 'hue'
           },
           {
              'name': 'Max Hue',
              'number': fader_cc(4),
              'default': 127,
-             'description': 'Maximal hue value used for the randomised colors. There\'s no point in setting this below `Min Hue`'
+             'description': 'Maximal hue value used for the randomised colors. There\'s no point in setting this below `Min Hue`',
+             'slider_style': 'hue'
           },
           {
              'name': 'Min Saturation',
@@ -543,7 +550,8 @@ programs = [
              'name': 'Hue',
              'number': fader_cc(3),
              'default': 64,
-             'description': 'Center hue value used for the randomised colors'
+             'description': 'Center hue value used for the randomised colors',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue Range',
@@ -567,7 +575,8 @@ programs = [
              'name': 'Keys Hue',
              'number': fader_cc(7),
              'default': 110,
-             'description': 'Center hue value used for the randomised colors for keyboard-triggered shapes'
+             'description': 'Center hue value used for the randomised colors for keyboard-triggered shapes',
+             'slider_style': 'hue'
           },
           {
              'name': 'Keys Hue Range',
@@ -637,7 +646,8 @@ programs = [
              'name': 'Hue',
              'number': fader_cc(3),
              'default': 64,
-             'description': 'Center hue value used for the randomised colors'
+             'description': 'Center hue value used for the randomised colors',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue Range',
@@ -719,14 +729,14 @@ programs = [
              'description': 'Rate at which keyboard triggered shapes decay'
          },
 
-         colorFader("Hue",  8, 0),
-         colorFader("Hue",  9, 1),
-         colorFader("Hue", 10, 2),
-         colorFader("Hue", 11, 3, 100),
-         colorFader("Hue", 12, 4),
-         colorFader("Hue", 13, 5),
-         colorFader("Hue", 14, 6),
-         colorFader("Hue", 15, 7),
+         colorFader("Hue",  8, 0,   0, "hue"),
+         colorFader("Hue",  9, 1,   0, "hue"),
+         colorFader("Hue", 10, 2,   0, "hue"),
+         colorFader("Hue", 11, 3, 100, "hue"),
+         colorFader("Hue", 12, 4,   0, "hue"),
+         colorFader("Hue", 13, 5,   0, "hue"),
+         colorFader("Hue", 14, 6,   0, "hue"),
+         colorFader("Hue", 15, 7,   0, "hue"),
 
          colorFader("Saturation", 16, 0),
          colorFader("Saturation", 17, 1),
@@ -800,7 +810,8 @@ programs = [
              'name': 'Hue',
              'number': fader_cc(3),
              'default': 64,
-             'description': 'Center hue value used for the randomised colors'
+             'description': 'Center hue value used for the randomised colors',
+             'slider_style': 'hue'
           },
           {
              'name': 'Hue Range',

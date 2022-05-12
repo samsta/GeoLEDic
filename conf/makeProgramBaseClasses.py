@@ -86,7 +86,7 @@ IMGUI_SLIDER_TEMPLATE = '''
         const uint8_t cmax = $max;
         if (++ix % 8 != 0) ImGui::SameLine();
         if (ImGui::VSliderU8WithText("$name", "$description",
-                                     ImVec2(20, 200), &m_control_values[$cc_num], cmin, cmax, ix * HUE_STEP_PER_SLIDER))
+                                     ImVec2(20, 200), &m_control_values[$cc_num], cmin, cmax, ix * HUE_STEP_PER_SLIDER, ImGui::SliderStyle_$slider_style))
         {
             if (sender) sender->sendControlChange($cc_num, m_control_values[$cc_num]);
         }
@@ -208,6 +208,7 @@ def getMenu(program):
             menu = menu + Template(IMGUI_SLIDER_TEMPLATE).substitute(
                name=name,
                description=cc['description'] if 'description' in cc else '',
+               slider_style=cc['slider_style'].upper() if 'slider_style' in cc else 'NORMAL',
                cc_num=cc['number'],
                min=cc['min'],
                max=cc['max'])
