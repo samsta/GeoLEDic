@@ -801,6 +801,7 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
         for (unsigned i = 0; i < LpMini::DYNAMIC_BUTTON_FIRST - LpMini::DYNAMIC_BUTTON_LAST + 1; i++) // dynamic button numbering is backwards as we want them from top to bottom
         {
             uint8_t row = LpMini::DYNAMIC_BUTTON_FIRST - i;
+            m_right_col_buttons[row].reset();
             if (i < buttons.size())
             {
                 uint8_t cc_num = buttons[i].cc_num;
@@ -814,10 +815,6 @@ void LaunchPad::updateFromMidi(const MidiMessage& msg)
                     m_dynamic_buttons_by_cc[cc_num]->setState(Button::INACTIVE);
                 }
                 m_right_col_buttons[row] = m_dynamic_buttons_by_cc[cc_num];
-            }
-            else
-            {
-                m_right_col_buttons[row].reset();
             }
         }
 
