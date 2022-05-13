@@ -50,10 +50,15 @@ void MidiMenu::drawMenu()
       {
          sender.enable(false);
       }
-      else if (not sender.enabled() && ImGui::Button("Resume MIDI Output"))
+      else if (not sender.enabled())
       {
-         sender.enable(true);
-         m_factory.program().sendSnapshot(m_midi_source.getSender());
+         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4, 0.3, 0, 1));
+         if (ImGui::Button("Resume MIDI Output"))
+         {
+            sender.enable(true);
+            m_factory.program().sendSnapshot(&sender);
+         }
+         ImGui::PopStyleColor();
       }
       ImGui::SameLine(); HelpMarker("Pause the MIDI output to play with controls and change programs without sending "
                                     "to the output port. When you resume, a snapshot of the current program number "

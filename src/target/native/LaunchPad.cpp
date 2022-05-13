@@ -50,6 +50,7 @@ namespace LpPro {
     {
         FADER_UP = 7,
         FADER_DOWN = 6,
+        PAUSE_MIDI = 1,
         FORCE_BLANK = 0
     };
 
@@ -65,6 +66,8 @@ const CRGB COLOR_PAGE_BTN(CRGB::Magenta);
 const CRGB COLOR_FADER_FINE_BTN(CRGB::LightBlue);
 const CRGB COLOR_FORCE_BLANK_BTN(CRGB::Red);
 const CRGB COLOR_SEND_SNAPSHOT_BTN(CRGB::Green);
+const CRGB COLOR_PAUSE_MIDI_BTN_PLAYING(CRGB::Green);
+const CRGB COLOR_PAUSE_MIDI_BTN_PAUSED(CRGB::Orange);
 const CRGB COLOR_PROGRAM_BTN(CRGB::Plum);
 const CRGB COLOR_SHIFT_BTN(CRGB::White);
 
@@ -289,9 +292,15 @@ public:
 
     Button(PadColor& pad, const CRGB& color):
         m_pad(pad),
-        m_color(color)
+        m_color(color),
+        m_inactive_color(dim(color))
     {
         setState(DISABLED);
+    }
+
+    void setInactiveColor(const CRGB& color)
+    {
+        m_inactive_color = color;
     }
 
     virtual ~Button()
@@ -307,7 +316,7 @@ public:
                 m_pad = m_color;
                 break;
             case INACTIVE:
-                m_pad = dim(m_color);
+                m_pad = m_inactive_color;
                 break;
             case DISABLED:
             default:
@@ -338,6 +347,7 @@ public:
 private:
     PadColor&  m_pad;
     const CRGB m_color;
+    CRGB       m_inactive_color;
     State      m_state;
 };
 
@@ -345,7 +355,7 @@ template <class HandlerClass>
 class ButtonWithHandler: public Button
 {
 public:
-    typedef void (HandlerClass::*HandlerFunction)(uint8_t);
+    typedef void (HandlerClass::*HandlerFunction)(uint8_t, Button&);
 
     ButtonWithHandler(PadColor& pad, const CRGB& color, HandlerClass& cls, HandlerFunction handler):
         Button(pad, color),
@@ -355,7 +365,7 @@ public:
 
     virtual void receive(uint8_t value)
     {
-        (m_cls.*m_handler)(value);
+        (m_cls.*m_handler)(value, *this);
     }
 
 private:
@@ -579,6 +589,14 @@ LaunchPad::LaunchPad(MidiMessageSink& to_launchpad, MidiMessageSink& to_geoledic
 
         m_right_col_buttons[LpPro::SEND_SNAPSHOT]  = std::make_shared<ButtonWithHandler<LaunchPad> >(m_right_col[LpPro::SEND_SNAPSHOT], COLOR_SEND_SNAPSHOT_BTN, *this, &LaunchPad::handleSendSnapshotButton);
         m_right_col_buttons[LpPro::SEND_SNAPSHOT]->setState(Button::ACTIVE);
+        m_left_col_buttons[LpPro::PAUSE_MIDI] = std::make_shared<ButtonWithHandler<LaunchPad> >(m_left_col[LpPro::PAUSE_MIDI], COLOR_PAUSE_MIDI_BTN_PLAYING, *this, &LaunchPad::handlePauseMidiButton);
+        MidiSource::MidiSender* sender(getMidiSource().getSender());
+        m_left_col_buttons[LpPro::PAUSE_MIDI]->setInactiveColor(COLOR_PAUSE_MIDI_BTN_PAUSED);
+        if (sender && not sender->enabled()) {
+            m_left_col_buttons[LpPro::PAUSE_MIDI]->setState(Button::INACTIVE);
+        } else {
+            m_left_col_buttons[LpPro::PAUSE_MIDI]->setState(Button::ACTIVE);
+        }
     }
     m_fader_up_button->setState(Button::INACTIVE);
     m_fader_down_button->setState(Button::INACTIVE);
@@ -701,7 +719,7 @@ void LaunchPad::sendColors()
     m_to_launchpad.sink(m_sysex_message.msg);
 }
 
-void LaunchPad::handlePrevPageButton(uint8_t value)
+void LaunchPad::handlePrevPageButton(uint8_t value, Button&)
 {
     // only care about note on
     if (value == 0) return;
@@ -717,7 +735,7 @@ void LaunchPad::handlePrevPageButton(uint8_t value)
     }
 }
 
-void LaunchPad::handleNextPageButton(uint8_t value)
+void LaunchPad::handleNextPageButton(uint8_t value, Button&)
 {
     // only care about note on
     if (value == 0) return;
@@ -733,22 +751,22 @@ void LaunchPad::handleNextPageButton(uint8_t value)
     }
 }
 
-void LaunchPad::handleUpButton(uint8_t value) {
-    m_fader_up_button->setState(value ? Button::ACTIVE : Button::INACTIVE);
+void LaunchPad::handleUpButton(uint8_t value, Button& button) {
+    button.setState(value ? Button::ACTIVE : Button::INACTIVE);
 
     if (value == 0) return;
     getProgramFactory().selectPrevPopupItem();
 }
 
-void LaunchPad::handleDownButton(uint8_t value) {
-    m_fader_down_button->setState(value ? Button::ACTIVE : Button::INACTIVE);
+void LaunchPad::handleDownButton(uint8_t value, Button& button) {
+    button.setState(value ? Button::ACTIVE : Button::INACTIVE);
 
     if (value == 0) return;
     getProgramFactory().selectNextPopupItem();
 }
 
 
-void LaunchPad::handleSendSnapshotButton(uint8_t value)
+void LaunchPad::handleSendSnapshotButton(uint8_t value, Button&)
 {
     // only care about note on
     if (value == 0) return;
@@ -760,15 +778,38 @@ void LaunchPad::handleSendSnapshotButton(uint8_t value)
     getProgramFactory().unlock();
 }
 
-void LaunchPad::handleProgramButton(uint8_t value)
+void LaunchPad::handlePauseMidiButton(uint8_t value, Button& button)
 {
     // only care about note on
     if (value == 0) return;
-    if (m_program_button->is(Button::ACTIVE) and not m_shift_button->is(Button::ACTIVE)) {
-        getProgramFactory().activatePopupSelection(getMidiSource().getSender());
-        m_program_button->setState(Button::INACTIVE);
+
+    MidiSource::MidiSender* sender(getMidiSource().getSender());
+    if (sender == nullptr) return;
+
+    if (sender->enabled()) {
+        sender->enable(false);
+        button.setState(Button::INACTIVE);
     } else {
-        m_program_button->setState(getProgramFactory().toggleProgramPopup() ?
+        sender->enable(true);
+        button.setState(Button::ACTIVE);
+        // the LaunchPad runs in a separate thread, we don't
+        //  want the program change to be actioned upon while
+        //  we're still using the program, hence we lock it
+        getProgramFactory().lock();
+        getProgramFactory().program().sendSnapshot(sender);
+        getProgramFactory().unlock();
+    }
+}
+
+void LaunchPad::handleProgramButton(uint8_t value, Button& button)
+{
+    // only care about note on
+    if (value == 0) return;
+    if (button.is(Button::ACTIVE) and not m_shift_button->is(Button::ACTIVE)) {
+        getProgramFactory().activatePopupSelection(getMidiSource().getSender());
+        button.setState(Button::INACTIVE);
+    } else {
+        button.setState(getProgramFactory().toggleProgramPopup() ?
             Button::ACTIVE : Button::INACTIVE);
     }
 }

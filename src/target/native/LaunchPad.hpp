@@ -83,13 +83,14 @@ private:
     void sendColors();
     bool addPadColor(uint8_t*& p, PadColor& pad, int col, int row);
 
-    void handleNextPageButton(uint8_t value);
-    void handlePrevPageButton(uint8_t value);
-    void handleUpButton(uint8_t value);
-    void handleDownButton(uint8_t value);
+    void handleNextPageButton(uint8_t value, Button&);
+    void handlePrevPageButton(uint8_t value, Button&);
+    void handleUpButton(uint8_t value, Button&);
+    void handleDownButton(uint8_t value, Button&);
 
-    void handleSendSnapshotButton(uint8_t value);
-    void handleProgramButton(uint8_t value);
+    void handleSendSnapshotButton(uint8_t value, Button&);
+    void handleProgramButton(uint8_t value, Button&);
+    void handlePauseMidiButton(uint8_t value, Button&);
 
     void toggleEnumPopup(uint8_t cc_num);
 
