@@ -155,6 +155,11 @@ bool ShapesFromNotes::isAnyTriangleSet() const
 
 void ShapesFromNotes::noteOn(uint8_t note, uint8_t velocity, uint8_t channel)
 {
+   if (velocity > 0 and channel == 0) 
+   {
+      // TODO: multi-channel support too hard - should we just drop it?
+      m_notes_set_this_run.insert(note);
+   }
    if (channel == 1)
    {
       if (note < NOTE_C3)
