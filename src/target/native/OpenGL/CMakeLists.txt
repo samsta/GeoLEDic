@@ -1,7 +1,7 @@
 include_directories(
    ${GLFW_INCLUDE_DIR}
    ${GLM_INCLUDE_DIR}
-   ../FastLED
+   ../lib/FastLED
    gfx
    .
    )

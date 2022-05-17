@@ -4,7 +4,7 @@ cmake_policy(SET CMP0087 NEW) # use generator expression in install(CODE)
 cmake_policy(SET CMP0072 NEW) # Use GLVND if available
 
 set(VERSION_EXTRA "" CACHE STRING "Extra version information, e.g. commit hash")
-set(FASTLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FastLED" CACHE PATH "Path to FastLED installation")
+set(FASTLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/FastLED" CACHE PATH "Path to FastLED installation")
 
 add_definitions(-std=c++11
                 -DWITH_GFX=1

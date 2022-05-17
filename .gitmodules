@@ -1,5 +1,5 @@
 [submodule "FastLED"]
-	path = FastLED
+	path = lib/FastLED
 	url = https://github.com/FastLED/FastLED.git
 [submodule "imgui"]
 	path = imgui
