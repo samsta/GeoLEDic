@@ -9,6 +9,7 @@ DecayingShapesFromNotes::DecayingShapesFromNotes():
 
 void DecayingShapesFromNotes::run()
 {
+   ShapesFromNotes::run();
    bool triangle_set = false;
    for (uint8_t k = 0; k < DOME_NUM_TRIANGLES; k++)
    {

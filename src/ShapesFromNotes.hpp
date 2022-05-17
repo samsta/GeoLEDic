@@ -1,18 +1,17 @@
 #ifndef ShapesFromNotes_hpp
 #define ShapesFromNotes_hpp
 
-#include "Controls.hpp"
+#include "Notes.hpp"
 #include "MidiDefs.hpp"
 #include "DomeDefs.hpp"
 #include <map>
 
-class ShapesFromNotes: public Controls
+class ShapesFromNotes: public Notes
 {
 public:
    ShapesFromNotes();
    virtual void noteOn(uint8_t note, uint8_t velocity, uint8_t channel);
-   virtual void noteOff(uint8_t note, uint8_t channel);
-   virtual void run(){}
+   virtual void run();
 
    uint8_t getTriangleValue(uint8_t note) const;
    bool isAnyTriangleSet() const;
@@ -57,7 +56,6 @@ private:
    };
    
    std::map<uint8_t, Associations> m_triangle_associations;
-   uint8_t m_triangles[DOME_NUM_TRIANGLES];
 };
 
 #endif /* ShapesFromNotes_hpp */

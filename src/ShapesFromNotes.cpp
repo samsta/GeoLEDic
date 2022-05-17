@@ -140,18 +140,17 @@ bool nonzero(uint8_t v)
 
 ShapesFromNotes::ShapesFromNotes()
 {
-   std::fill(m_triangles, m_triangles+DOME_NUM_TRIANGLES, 0);
 }
 
 uint8_t ShapesFromNotes::getTriangleValue(uint8_t note) const
 {
    if (note >= DOME_NUM_TRIANGLES) return 0;
-   return m_triangles[note];
+   return m_notes[note];
 }
 
 bool ShapesFromNotes::isAnyTriangleSet() const
 {
-   return std::any_of(m_triangles, m_triangles + DOME_NUM_TRIANGLES, nonzero);
+   return std::any_of(m_notes, m_notes + DOME_NUM_TRIANGLES, nonzero);
 }
 
 void ShapesFromNotes::noteOn(uint8_t note, uint8_t velocity, uint8_t channel)
@@ -173,9 +172,9 @@ void ShapesFromNotes::noteOn(uint8_t note, uint8_t velocity, uint8_t channel)
    }
 }
 
-void ShapesFromNotes::noteOff(uint8_t note, uint8_t channel)
+void ShapesFromNotes::run()
 {
-   noteOn(note, 0, channel);
+   Notes::run();
 }
 
 void ShapesFromNotes::associateShapeWithTriangle(Shape shape_type, uint8_t shape_id, uint8_t triangle_ix, uint8_t velocity)
@@ -189,7 +188,7 @@ void ShapesFromNotes::associateShapeWithTriangle(Shape shape_type, uint8_t shape
    }
    
    m_triangle_associations[triangle_ix].set({shape_type, shape_id, velocity});
-   m_triangles[triangle_ix] = m_triangle_associations[triangle_ix].velocity();
+   m_notes[triangle_ix] = m_triangle_associations[triangle_ix].velocity();
 }
 
 void ShapesFromNotes::dissociateShapeFromTriangle(Shape shape_type, uint8_t shape_id, uint8_t triangle_ix)
@@ -197,7 +196,7 @@ void ShapesFromNotes::dissociateShapeFromTriangle(Shape shape_type, uint8_t shap
    if (m_triangle_associations.count(triangle_ix) == 0) return;
    
    m_triangle_associations[triangle_ix].clear(shape_type, shape_id);
-   m_triangles[triangle_ix] = m_triangle_associations[triangle_ix].velocity();
+   m_notes[triangle_ix] = m_triangle_associations[triangle_ix].velocity();
    
    // if the velocity is 0, then there's no association remaining, so we can remove the item
    if (m_triangle_associations[triangle_ix].velocity() == 0)
