@@ -50,7 +50,6 @@ public:
    }
    
    virtual void controlChange(uint8_t, uint8_t){};
-   virtual void run(){};
 };
 
 TEST_F(TestShapesFromNotes, singleNotes)
@@ -64,10 +63,35 @@ TEST_F(TestShapesFromNotes, singleNotes)
    expectNotesSet({{NOTE_VELOCITY_1, {0}},
                    {NOTE_VELOCITY_2, {NUM_TRIANGLES-1}}});
 
+   run();
    noteOff(NOTE_LOWEST, CHANNEL_SINGLE_NOTES);
    expectNotesSet({{NOTE_VELOCITY_2, {NUM_TRIANGLES-1}}});
 
    noteOff(NOTE_LOWEST+NUM_TRIANGLES-1, CHANNEL_SINGLE_NOTES);
+   expectNotesSet({});
+
+}
+
+TEST_F(TestShapesFromNotes, dontTurnOffImmediatelyToEnsureNotesAreSetForAtLeast1Frame)
+{
+   const uint8_t NOTE_VELOCITY_1 = 5;
+   const uint8_t NOTE_VELOCITY_2 = 6;
+   
+   noteOn(NOTE_LOWEST,     NOTE_VELOCITY_1, CHANNEL_SINGLE_NOTES);
+   noteOn(NOTE_LOWEST+NUM_TRIANGLES-1, NOTE_VELOCITY_2, CHANNEL_SINGLE_NOTES);
+
+   expectNotesSet({{NOTE_VELOCITY_1, {0}},
+                   {NOTE_VELOCITY_2, {NUM_TRIANGLES-1}}});
+
+   noteOff(NOTE_LOWEST, CHANNEL_SINGLE_NOTES);
+   noteOff(NOTE_LOWEST+NUM_TRIANGLES-1, CHANNEL_SINGLE_NOTES);
+
+   expectNotesSet({{NOTE_VELOCITY_1, {0}},
+                   {NOTE_VELOCITY_2, {NUM_TRIANGLES-1}}});
+   
+   run();
+   run();
+
    expectNotesSet({});
 
 }
@@ -79,6 +103,7 @@ TEST_F(TestShapesFromNotes, singleBlob)
    noteOn(NOTE_C3, NOTE_VELOCITY, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY, {0, 1, 2, 26, 27, 28}}});
    
+   run();
    noteOff(NOTE_C3, CHANNEL_SHAPES);
    expectNotesSet({});
 }
@@ -94,6 +119,7 @@ TEST_F(TestShapesFromNotes, twoBlobs)
                    {NOTE_VELOCITY_2, {118, 119, 120, 121, 122}}
                   });
    
+   run();
    noteOff(NOTE_C3, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY_2, {118, 119, 120, 121, 122}}});
 
@@ -112,6 +138,7 @@ TEST_F(TestShapesFromNotes, twoOverlappingBlobsReleasedInRevers)
                    {NOTE_VELOCITY_2, {2, 3, 4, 28, 29, 30}}
                   });
    
+   run();
    noteOff(NOTE_C3 + 1, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY_1, {0, 1, 2, 26, 27, 28}}});
 
@@ -130,6 +157,7 @@ TEST_F(TestShapesFromNotes, twoOverlappingBlobsReleasedInOrder)
                    {NOTE_VELOCITY_2, {2, 3, 4, 28, 29, 30}}
                   });
    
+   run();
    noteOff(NOTE_C3, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY_2, {2, 3, 4, 28, 29, 30}}});
 
@@ -144,6 +172,7 @@ TEST_F(TestShapesFromNotes, singlePentagon)
    noteOn(NOTE_Cneg1, NOTE_VELOCITY, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY, {118, 119, 120, 121, 122}}});
    
+   run();
    noteOff(NOTE_Cneg1, CHANNEL_SHAPES);
    expectNotesSet({});
 }
@@ -158,6 +187,7 @@ TEST_F(TestShapesFromNotes, singlePentagonAndRing)
    expectNotesSet({{NOTE_VELOCITY_1, {118, 119, 120, 121, 122}},
                    {NOTE_VELOCITY_2, {78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102}}});
 
+   run();
    noteOff(NOTE_Cneg1, CHANNEL_SHAPES);
    expectNotesSet({{NOTE_VELOCITY_2, {78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102}}});
    
@@ -177,6 +207,7 @@ TEST_F(TestShapesFromNotes, overlappingPentagonRings)
                    //                           \- covered by 2nd shape -/
                    {VELOCITY_2, { 0,  1,  7,  8, 25, 26, 34, 35, 53, 54, 62, 61, 81, 82, 85, 86, 107, 106}}});
 
+   run();
    noteOff(NOTE_D0, CHANNEL_SHAPES);
    expectNotesSet({{VELOCITY_1, {78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102}}});
 
@@ -199,11 +230,13 @@ TEST_F(TestShapesFromNotes, overlappingSingleNotePentagonAndBlob)
                    //                                ^--v  ring partially covered by blob
                    {NOTE_VELOCITY_3, {54, 55, 56,   81, 82, 83}}});
 
+   run();
    noteOff(NOTE_C3+26, CHANNEL_SHAPES);
    expectNotesSet({/*{NOTE_VELOCITY_1, {83}},*/  // single triangle covered by RING
                    {NOTE_VELOCITY_2, {78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102}}});
    
    noteOn(NOTE_C3+26, NOTE_VELOCITY_3, CHANNEL_SHAPES);
+   run();
    noteOff(NOTE_Cneg1+2, CHANNEL_SHAPES);
 
    expectNotesSet({/*{NOTE_VELOCITY_1, {83}},*/  // single triangle covered by blob
@@ -226,7 +259,7 @@ TEST_F(TestShapesFromNotes, setAllClearAll)
          noteOn(note, channel+5, channel);
       }
    }
-   
+   run();
    for (unsigned channel: {CHANNEL_SHAPES, CHANNEL_SINGLE_NOTES})
    {
       for (unsigned note = NOTE_LOWEST; note <= NOTE_HIGHEST; note++)
@@ -245,6 +278,7 @@ TEST_F(TestShapesFromNotes, duplicateNoteOn)
    noteOn(NOTE_C2, NOTE_VELOCITY, CHANNEL_SHAPES);
    noteOn(NOTE_C2, NOTE_VELOCITY, CHANNEL_SHAPES);
    
+   run();
    noteOff(NOTE_C2, CHANNEL_SHAPES);
    expectNotesSet({});
 }
@@ -257,6 +291,7 @@ TEST_F(TestShapesFromNotes, fuzz)
    while (iterations--)
    {
       noteOn(rand() % (NOTE_HIGHEST + 10), rand(), rand() % 2);
+      run();
       noteOff(rand() % (NOTE_HIGHEST + 10), rand() % 2);
    }
 }
@@ -273,6 +308,7 @@ TEST_F(TestShapesFromNotes, anyTrianglesSet)
 
    EXPECT_TRUE(isAnyTriangleSet());
 
+   run();
    noteOff(NOTE_C3 + 1, CHANNEL_SHAPES);
 
    EXPECT_TRUE(isAnyTriangleSet());

@@ -14,7 +14,7 @@ public:
    virtual void run();
 
    uint8_t getTriangleValue(uint8_t note) const;
-   bool isAnyTriangleSet() const;
+   bool isAnyTriangleSet() const { return isAnyNoteSet(); }
 
 private:
    enum Shape {

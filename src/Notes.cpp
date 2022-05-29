@@ -49,3 +49,8 @@ uint8_t Notes::note(uint8_t note) const
    if (note > NOTE_HIGHEST) return 0;
    return m_notes[note];
 }
+
+bool Notes::isAnyNoteSet() const
+{
+   return std::any_of(m_notes, m_notes + NOTE_HIGHEST+1, [](uint8_t value){ return value > 0;});
+}

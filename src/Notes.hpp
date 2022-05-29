@@ -13,6 +13,7 @@ public:
    virtual void noteOff(uint8_t note, uint8_t channel);
    
    uint8_t note(uint8_t note) const;
+   bool isAnyNoteSet() const;
 
    virtual void run();
    

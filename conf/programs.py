@@ -470,55 +470,45 @@ programs = [
        ]
     },
     {
-       'program': 'Edgy',
-       'base': 'ShapesFromNotes',
-       'keyzones': keyzones['ShapesFromNotes'],
-       'controls': [
+       'program': 'Strobe',
+       'base': 'Notes',
+       'keyzones': [
+          [
+            {
+                'name': 'Entire Dome',
+                'from': 24,
+                'to': 24,
+                'color': 'Orange'
+            },
+            {
+                'name': 'Meridians',
+                'from': 25,
+                'to': 29,
+                'color': 'Blue'
+            },
+            {
+                'name': 'Parallels',
+                'from': 30,
+                'to': 40,
+                'color': 'Red'
+            }
+
+          ]
+        ],
+       'controls': [    
           {
-             'name': 'Edge Rate',
-             'description': 'Rate at which edges appear',
+             'name': 'Hue',
              'number': fader_cc(0),
-             'default': 3,
-             'max': 31
+             'default': 0,
+             'description': 'Strobe Hue',
+             'slider_style': 'hue'
           },
           {
-             'name': 'Keyboard Edge Rate',
-             'description': 'Rate at which edges appear for keyboard-triggered shapes',
+             'name': 'Saturation',
              'number': fader_cc(1),
-             'default': 100
-          },
-          {
-             'name': 'Decay',
-             'description': 'How fast edges fade to black',
-             'number': fader_cc(2),
-             'default': 50
-          },
-          {
-             'name': 'Min Hue',
-             'number': fader_cc(3),
              'default': 0,
-             'description': 'Minimal hue value used for the randomised colors',
-             'slider_style': 'hue'
+             'description': 'Strobe Saturation'
           },
-          {
-             'name': 'Max Hue',
-             'number': fader_cc(4),
-             'default': 127,
-             'description': 'Maximal hue value used for the randomised colors. There\'s no point in setting this below `Min Hue`',
-             'slider_style': 'hue'
-          },
-          {
-             'name': 'Min Saturation',
-             'number': fader_cc(5),
-             'default': 0,
-             'description': 'Minimal saturation used for the randomised colors'
-          },
-          {
-             'name': 'Max Saturation',
-             'number': fader_cc(6),
-             'default': 127,
-             'description': 'Maximal saturation used for the randomised colors. There\'s no point in setting this below `Min Saturation`'
-          }
        ]
     },
     {

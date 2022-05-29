@@ -24,13 +24,13 @@ add_library(programs STATIC
             ${CMAKE_CURRENT_SOURCE_DIR}/DefaultRainbow.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Diagnostic.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/BetterEdgy.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Edgy.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Fire.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/FlexibleNoise.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/MovingRainbow.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Lightning.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Noise.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/OrganicLine.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Strobe.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/WarpDrive.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/WarpDriveMandala.cpp
             ${GENERATED_BASE_CLASS_SOURCES}
