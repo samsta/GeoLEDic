@@ -131,7 +131,7 @@ enum MidiNotes {
    NOTE_F8    	  = 125,	
    NOTE_F8_SHARP = 126,	  
    NOTE_G8    	  = 127,	
-   NOTE_HIGHEST  = 127
+   NOTE_HIGHEST  = 159
 };
 
 #endif

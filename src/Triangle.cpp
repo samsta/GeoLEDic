@@ -21,7 +21,6 @@ void inset(Vertex (&corners)[3], float distance)
    std::copy(&new_corners[0], &new_corners[3], &corners[0]);
 }
 
-
 Triangle::Triangle(
    CRGB* strip,
    const Edge (&edges)[3],
@@ -159,8 +158,10 @@ void Triangle::createLeds(std::vector<gfx::LED>& leds, std::vector<gfx::Triangle
       i++;
    }
    led_triangle.vertices[0].num_leds = leds.size() - led_triangle.vertices[0].start_led_ix;
+   // insert outer (semi-transparent) triangles at the back so they get
+   //   drawn after the solid ones or else transparency looks funky
+   triangles.insert(triangles.begin(), led_triangle);
    triangles.push_back(outer_triangle);
-   triangles.push_back(led_triangle);
 }
 
 #endif

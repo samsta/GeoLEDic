@@ -20,6 +20,7 @@ public:
    
    const glm::mat4& getViewMatrix() const;
    const glm::mat4& getProjectionMatrix() const;
+   const glm::vec3& getCameraPosition() const;
 
    void swapBuffers();
    

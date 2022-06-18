@@ -188,6 +188,8 @@ Gfx::Impl::Impl(std::vector<LED>& leds, std::vector<Triangle>& triangles, const 
    
    // front facing side of the triangles is with vertices going clockwise
    glFrontFace(GL_CW);
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    
    extractUniformLocations();
 }

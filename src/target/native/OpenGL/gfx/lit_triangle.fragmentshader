@@ -18,9 +18,9 @@ uniform bool draw_outline;
 
 void main()
 {
-   if (gl_FrontFacing && num_leds > 0)
+   if (num_leds > 0)
    {
-       float directional = (1 + max(dot(normal, direction), 0.0))/2;
+       float directional = 1;//(1 + max(dot(normal, direction), 0.0))/2;
        vec3 diffuse = vec3(0.0);
        for (int i = 0; i < num_leds; i++)
        {
@@ -33,7 +33,7 @@ void main()
              diffuse += led_color[i] / attenuation;
           }
        }
-       FragColor = vec4(diffuse, 1.0) * directional;
+       FragColor = vec4(diffuse * directional, 1.0);
    }
    else
    {
@@ -44,7 +44,7 @@ void main()
       else 
       {
          float directional = max(dot(-normal, direction), 0.0);
-         FragColor = vec4(0.3, 0.3, 0.3, 1) * directional;
+         FragColor = vec4(vec3(0.1) * directional, 1 - 0.2 * directional);
       }
    }
 }

@@ -149,7 +149,7 @@ void Window::processInputs()
      m_position -= right * deltaTime * m_config.strafingSpeed();
    }
 
-   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 1000 units
+   // Projection matrix : 45ï¿½ Field of View, 4:3 ratio, display range : 0.1 unit <-> 1000 units
    m_projection_matrix = glm::perspective(glm::radians(m_fov_deg), float(width)/float(height), 0.1f, 1000.0f);
    // Camera matrix
    m_view_matrix = glm::lookAt(m_position,           // Camera is here
@@ -174,6 +174,11 @@ const glm::mat4& Window::getViewMatrix() const
 const glm::mat4& Window::getProjectionMatrix() const
 {
    return m_projection_matrix;
+}
+
+const glm::vec3& Window::getCameraPosition() const
+{
+   return m_position;
 }
 
 glm::vec3 Window::getDirection() const
